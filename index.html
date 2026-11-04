@@ -111,7 +111,7 @@
       </header>
       <div class="flip" id="my-card" role="button" tabindex="0">
         <div class="flip-inner">
-          <div class="face front"><div class="big-emoji">🂠</div><p>Tippen zum Aufdecken</p><p class="muted small">Niemand sonst darf hinschauen!</p></div>
+          <div class="face front"><div class="big-emoji">🂠</div><p>Gedrückt halten zum Anzeigen</p><p class="muted small">Loslassen – und die Karte ist wieder verdeckt.</p></div>
           <div class="face face-back" id="my-card-back"></div>
         </div>
       </div>
@@ -128,11 +128,11 @@
       <header class="bar"><button class="back" data-action="home">‹</button><h2 id="pass-title">Spieler 1</h2><span class="pill" id="pass-progress">1/6</span></header>
       <div class="flip" id="pass-card" role="button" tabindex="0">
         <div class="flip-inner">
-          <div class="face front"><div class="big-emoji">🤫</div><p id="pass-front-text">Gib das Handy an Spieler 1</p><p class="muted small">Dann tippen zum Aufdecken</p></div>
+          <div class="face front"><div class="big-emoji">🤫</div><p id="pass-front-text">Gib das Handy an Spieler 1</p><p class="muted small">Dann gedrückt halten zum Anzeigen</p></div>
           <div class="face face-back" id="pass-card-back"></div>
         </div>
       </div>
-      <button class="btn primary big hidden" id="pass-next" data-action="pass-next">Verdecken &amp; weitergeben ▶</button>
+      <button class="btn primary big hidden" id="pass-next" data-action="pass-next">Weitergeben ▶</button>
     </section>
 
     <!-- ALLE HABEN IHR WORT -->
@@ -167,16 +167,17 @@
       </div>
     </section>
 
-    <!-- AUFLÖSUNG -->
-    <div class="modal hidden" id="reveal-modal">
-      <div class="modal-box">
-        <h2>Auflösung</h2>
-        <p class="muted">Das Wort war</p>
-        <div class="reveal-word" id="reveal-word"></div>
-        <p class="muted" id="reveal-hint"></p>
-        <p class="muted">Imposter:</p>
-        <div class="reveal-imps" id="reveal-imps"></div>
-        <button class="btn primary" data-action="close-modal">Schließen</button>
+    <!-- DIALOG (Bottom Sheet) -->
+    <div class="sheet-layer" id="sheet" aria-hidden="true">
+      <div class="scrim" id="sheet-scrim"></div>
+      <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+        <div class="grabber"></div>
+        <h2 id="sheet-title"></h2>
+        <div class="sheet-body" id="sheet-body"></div>
+        <div class="sheet-actions">
+          <button class="btn primary big" id="sheet-ok">OK</button>
+          <button class="btn ghost" id="sheet-cancel">Abbrechen</button>
+        </div>
       </div>
     </div>
 

@@ -25,3 +25,8 @@ Danach ist die App unter `https://<benutzername>.github.io/imposter-app/` erreic
 
 ## Wörter ergänzen
 In `words.js` – neue Wörter nur **am Ende** einer Kategorie anhängen (neue Kategorien ans Ende der Liste, max. 14), damit bestehende Codes gleich bleiben.
+
+## Design
+Die Oberfläche orientiert sich am Skill `apple-design` (liegt unter `.claude/skills/apple-design/`,
+MIT-Lizenz, © Emil Kowalski, Quelle: github.com/emilkowalski/skills): Karte nur sichtbar solange gedrückt,
+Dialoge als Bottom Sheet (wegziehbar), Rücksicht auf „Bewegung reduzieren“, „Transparenz reduzieren“ und „Kontrast erhöhen“.

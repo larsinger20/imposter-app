@@ -248,10 +248,19 @@ function shareLink() {
   if (navigator.share) {
     navigator.share({ title: "Imposter", text, url }).catch(() => {});
   } else if (navigator.clipboard) {
-    navigator.clipboard.writeText(url).then(() => toast("Link kopiert ✓"), () => prompt("Link kopieren:", url));
+    navigator.clipboard.writeText(url).then(() => toast("✓ Link kopiert"), () => showLinkSheet(url));
   } else {
-    prompt("Link kopieren:", url);
+    showLinkSheet(url);
   }
+}
+function showLinkSheet(url) {
+  openSheet({
+    title: "Link teilen",
+    html: `<p class="muted">Kopiere den Link und schick ihn an alle:</p><input class="share-input" readonly value="${esc(url)}">`,
+    ok: "Fertig", cancel: null,
+  });
+  const inp = $(".share-input");
+  inp.addEventListener("focus", () => inp.select());
 }
 
 /* ===================== Beitreten / Board ===================== */
@@ -286,8 +295,12 @@ function renderBoard() {
     b.innerHTML = name
       ? `<span class="seat-name">${esc(name)}</span><small>${state.seat === i ? "du" : "Nr. " + i}</small>`
       : `${i}<small>${state.seat === i ? "du" : "Spieler"}</small>`;
-    b.onclick = () => {
-      if (state.seat !== i && !confirm(`Bist du wirklich ${playerName(i)}?`)) return;
+    b.onclick = async () => {
+      if (state.seat !== i && !(await openSheet({
+        title: `Bist du ${esc(playerName(i))}?`,
+        html: `<p class="muted">Danach siehst du deine geheime Karte – nur du darfst draufschauen.</p>`,
+        ok: `Ja, ich bin ${esc(playerName(i))}`,
+      }))) return;
       state.seat = i;
       persist();
       renderCard();
@@ -315,13 +328,32 @@ function cardHTML(r, seat, hints) {
       <p class="muted small">Unter euch sind Imposter, die das Wort nicht kennen.</p>`,
   };
 }
+// Karte ist nur sichtbar, solange der Finger drauf liegt – Loslassen verdeckt sofort wieder.
 function setupFlip(el, onOpen) {
   el.classList.remove("open");
-  el.onclick = () => {
-    el.classList.toggle("open");
-    if (el.classList.contains("open") && onOpen) onOpen();
+  const open = () => {
+    if (el.classList.contains("open")) return;
+    el.classList.add("open");
+    haptic();
+    if (onOpen) onOpen();
   };
-  el.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); el.click(); } };
+  const close = () => el.classList.remove("open");
+  el.onpointerdown = (e) => {
+    if (e.button > 0) return;
+    e.preventDefault();
+    try { el.setPointerCapture(e.pointerId); } catch { /* egal */ }
+    open();
+  };
+  el.onpointerup = close;
+  el.onpointercancel = close;
+  el.onlostpointercapture = close;
+  el.oncontextmenu = (e) => e.preventDefault();
+  el.onkeydown = (e) => { if ((e.key === " " || e.key === "Enter") && !e.repeat) { e.preventDefault(); open(); } };
+  el.onkeyup = (e) => { if (e.key === " " || e.key === "Enter") close(); };
+  el.onblur = close;
+}
+function haptic() {
+  try { if (navigator.vibrate) navigator.vibrate(8); } catch { /* iOS kann das im Browser nicht */ }
 }
 function renderCard() {
   const r = computeRound(state.game, state.round);
@@ -347,7 +379,7 @@ function renderPass() {
   back.innerHTML = c.html;
   back.classList.toggle("imp", c.imp);
   $("#pass-next").classList.add("hidden");
-  $("#pass-next").textContent = i < state.game.players ? "Verdecken & weitergeben ▶" : "Verdecken & los geht's ▶";
+  $("#pass-next").textContent = i < state.game.players ? `Weiter zu ${playerName(i + 1)} ▶` : "Alle haben ihr Wort ▶";
   setupFlip($("#pass-card"), () => $("#pass-next").classList.remove("hidden"));
 }
 function passNext() {
@@ -368,14 +400,93 @@ function renderReady() {
 }
 
 /* ===================== Auflösung ===================== */
-function reveal() {
-  if (!confirm("Wirklich auflösen? Alle sehen dann das Wort und die Imposter.")) return;
+async function reveal() {
+  const ok = await openSheet({
+    title: "Auflösen?",
+    html: `<p class="muted">Alle sehen dann das Wort und wer Imposter war.</p>`,
+    ok: "Auflösen",
+  });
+  if (!ok) return;
   const r = computeRound(state.game, state.round);
-  $("#reveal-word").textContent = r.word;
-  $("#reveal-hint").textContent = state.game.hints ? `Tipp für die Imposter: „${r.hint}“` : "";
-  $("#reveal-imps").innerHTML = r.imposters.map((n) => `<span>${esc(playerName(n))}</span>`).join("");
-  $("#reveal-modal").classList.remove("hidden");
+  await wait(320); // erst runter, dann mit dem Ergebnis wieder hoch
+  openSheet({
+    title: "Auflösung",
+    html: `<p class="muted">Das Wort war</p>
+      <div class="reveal-word">${esc(r.word)}</div>
+      ${state.game.hints ? `<p class="muted">Tipp für die Imposter: „${esc(r.hint)}“</p>` : ""}
+      <p class="muted">${r.imposters.length > 1 ? "Imposter waren" : "Imposter war"}</p>
+      <div class="reveal-imps">${r.imposters.map((n) => `<span>${esc(playerName(n))}</span>`).join("")}</div>`,
+    ok: "Schließen", cancel: null,
+  });
 }
+const wait = (ms) => new Promise((res) => setTimeout(res, ms));
+
+/* ===================== Dialog (Bottom Sheet) ===================== */
+// Gleitet von unten rein und auf demselben Weg wieder raus; lässt sich nach unten wegziehen.
+let sheetResolve = null;
+function openSheet({ title, html = "", ok = "OK", cancel = "Abbrechen" }) {
+  if (sheetResolve) closeSheet(false);
+  $("#sheet-title").innerHTML = title;
+  $("#sheet-body").innerHTML = html;
+  $("#sheet-ok").innerHTML = ok;
+  $("#sheet-cancel").textContent = cancel || "";
+  $("#sheet-cancel").classList.toggle("hidden", !cancel);
+  const layer = $("#sheet");
+  layer.classList.add("open");
+  layer.setAttribute("aria-hidden", "false");
+  setTimeout(() => $("#sheet-ok").focus({ preventScroll: true }), 50);
+  return new Promise((res) => { sheetResolve = res; });
+}
+function closeSheet(result) {
+  if (!sheetResolve) return;
+  const layer = $("#sheet");
+  const panel = layer.querySelector(".sheet");
+  panel.style.transition = "";
+  panel.style.transform = "";
+  layer.classList.remove("open");
+  layer.setAttribute("aria-hidden", "true");
+  const res = sheetResolve;
+  sheetResolve = null;
+  res(result);
+}
+(function setupSheet() {
+  const panel = $("#sheet .sheet");
+  $("#sheet-ok").onclick = () => closeSheet(true);
+  $("#sheet-cancel").onclick = () => closeSheet(false);
+  $("#sheet-scrim").onclick = () => closeSheet(false);
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeSheet(false); });
+
+  // Nach unten wegziehen: folgt dem Finger 1:1, nach oben mit Gummiband-Widerstand.
+  let drag = null;
+  const rubberband = (d, dim, c = 0.55) => (d * dim * c) / (dim + c * d);
+  panel.addEventListener("pointerdown", (e) => {
+    if (e.target.closest("button, input, a")) return;
+    drag = { y: e.clientY, dy: 0, hist: [[e.timeStamp, e.clientY]] };
+    panel.setPointerCapture(e.pointerId);
+    panel.style.transition = "none";
+  });
+  panel.addEventListener("pointermove", (e) => {
+    if (!drag) return;
+    const raw = e.clientY - drag.y;
+    drag.dy = raw >= 0 ? raw : -rubberband(-raw, panel.offsetHeight);
+    panel.style.transform = `translateY(${drag.dy}px)`;
+    drag.hist.push([e.timeStamp, e.clientY]);
+    if (drag.hist.length > 5) drag.hist.shift();
+  });
+  const end = () => {
+    if (!drag) return;
+    const [t0, y0] = drag.hist[0];
+    const [t1, y1] = drag.hist[drag.hist.length - 1];
+    const velocity = t1 > t0 ? (y1 - y0) / (t1 - t0) : 0; // px/ms, positiv = nach unten
+    const dy = drag.dy;
+    drag = null;
+    panel.style.transition = "";
+    if (dy > panel.offsetHeight * 0.3 || (velocity > 0.5 && dy > 10)) closeSheet(false);
+    else panel.style.transform = ""; // federt vom aktuellen Punkt zurück
+  };
+  panel.addEventListener("pointerup", end);
+  panel.addEventListener("pointercancel", end);
+})();
 
 /* ===================== Events ===================== */
 const actions = {
@@ -396,9 +507,13 @@ const actions = {
   "join-submit": () => joinWithCode($("#code-input").value),
   board: () => { renderBoard(); show("board"); },
   reveal,
-  "close-modal": () => $("#reveal-modal").classList.add("hidden"),
-  "next-round": () => {
-    if (!confirm(`Neue Runde starten? (Runde ${state.round + 1})`)) return;
+  "next-round": async () => {
+    const ok = await openSheet({
+      title: `Runde ${state.round + 1} starten?`,
+      html: `<p class="muted">Alle anderen müssen danach auch „Nächste Runde“ drücken, damit ihr wieder in derselben Runde seid.</p>`,
+      ok: "Neue Runde starten",
+    });
+    if (!ok) return;
     state.round++;
     persist();
     renderCard();
@@ -425,6 +540,12 @@ $("#code-input").addEventListener("input", (e) => {
   const c = cleanCode(e.target.value).slice(0, 9);
   e.target.value = c.length > 6 ? formatCode(c) : c.length > 3 ? c.slice(0, 3) + "-" + c.slice(3) : c;
   $("#join-error").textContent = "";
+});
+
+// iOS zeigt :active-Feedback nur mit einem Touch-Listener; Karten beim Sperren sofort verdecken.
+document.addEventListener("touchstart", () => {}, { passive: true });
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) document.querySelectorAll(".flip.open").forEach((f) => f.classList.remove("open"));
 });
 
 /* ===================== Start ===================== */
