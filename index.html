@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#14111f">
+  <title>Imposter – Partyspiel</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕵️</text></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main id="app">
+
+    <!-- START -->
+    <section class="screen active" id="screen-home">
+      <div class="hero">
+        <div class="logo">🕵️</div>
+        <h1>Imposter</h1>
+        <p class="sub">Das Partyspiel für vor Ort – wer kennt das Wort nicht?</p>
+      </div>
+      <div class="stack">
+        <button class="btn primary big" data-action="setup-multi">📱📱 Jeder mit eigenem Handy<small>Spiel erstellen &amp; Code teilen</small></button>
+        <button class="btn secondary big" data-action="join">🔑 Spiel beitreten<small>Code eingeben</small></button>
+        <button class="btn secondary big" data-action="setup-pass">🔄 Ein Handy herumreichen<small>Alle spielen an einem Gerät</small></button>
+        <button class="btn ghost" data-action="rules">📖 Spielregeln</button>
+      </div>
+    </section>
+
+    <!-- SETUP -->
+    <section class="screen" id="screen-setup">
+      <header class="bar"><button class="back" data-action="home">‹</button><h2 id="setup-title">Neues Spiel</h2></header>
+
+      <div class="card">
+        <label class="label">Spieler insgesamt</label>
+        <div class="stepper">
+          <button data-step="players" data-delta="-1">−</button>
+          <output id="players-out">6</output>
+          <button data-step="players" data-delta="1">+</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <label class="label">Davon Imposter <span class="hint" id="imp-hint"></span></label>
+        <div class="stepper">
+          <button data-step="imposters" data-delta="-1">−</button>
+          <output id="imposters-out">1</output>
+          <button data-step="imposters" data-delta="1">+</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <label class="label">Kategorien</label>
+        <div class="chips" id="category-chips"></div>
+      </div>
+
+      <div class="card">
+        <label class="switch">
+          <input type="checkbox" id="hint-toggle" checked>
+          <span class="slider"></span>
+          <span>Imposter bekommen ein Tipp-Wort</span>
+        </label>
+      </div>
+
+      <button class="btn primary big" data-action="start">Los geht's ▶</button>
+    </section>
+
+    <!-- HOST: CODE TEILEN -->
+    <section class="screen" id="screen-host">
+      <header class="bar"><button class="back" data-action="home">‹</button><h2>Spiel erstellt</h2></header>
+      <div class="card center">
+        <p class="muted">Alle öffnen diese Seite und geben den Code ein:</p>
+        <div class="code" id="host-code"></div>
+        <p class="muted small" id="host-info"></p>
+        <div class="stack">
+          <button class="btn secondary" data-action="share">🔗 Link teilen</button>
+        </div>
+      </div>
+      <button class="btn primary big" data-action="host-join">Weiter zur Platzwahl ▶</button>
+    </section>
+
+    <!-- BEITRETEN -->
+    <section class="screen" id="screen-join">
+      <header class="bar"><button class="back" data-action="home">‹</button><h2>Spiel beitreten</h2></header>
+      <div class="card">
+        <label class="label" for="code-input">Spielcode</label>
+        <input id="code-input" class="code-input" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXX-XXX-XXX" maxlength="11">
+        <p class="error" id="join-error"></p>
+      </div>
+      <button class="btn primary big" data-action="join-submit">Beitreten ▶</button>
+    </section>
+
+    <!-- BOARD: PLATZ WÄHLEN -->
+    <section class="screen" id="screen-board">
+      <header class="bar"><button class="back" data-action="home">‹</button><h2>Wer bist du?</h2></header>
+      <p class="muted center">Jeder tippt auf <b>seine eigene</b> Nummer – sprecht euch vorher ab, wer welche Nummer hat.</p>
+      <div class="board" id="seat-board"></div>
+    </section>
+
+    <!-- KARTE (eigenes Handy) -->
+    <section class="screen" id="screen-card">
+      <header class="bar">
+        <button class="back" data-action="board">‹</button>
+        <h2 id="card-title">Spieler 1</h2>
+        <span class="pill" id="card-round">Runde 1</span>
+      </header>
+      <div class="flip" id="my-card" role="button" tabindex="0">
+        <div class="flip-inner">
+          <div class="face front"><div class="big-emoji">🂠</div><p>Tippen zum Aufdecken</p><p class="muted small">Niemand sonst darf hinschauen!</p></div>
+          <div class="face face-back" id="my-card-back"></div>
+        </div>
+      </div>
+      <p class="muted center small" id="card-meta"></p>
+      <div class="row">
+        <button class="btn secondary" data-action="reveal">🔍 Auflösen</button>
+        <button class="btn primary" data-action="next-round">Nächste Runde ▶</button>
+      </div>
+      <p class="muted center small">„Nächste Runde“ muss auf allen Handys gedrückt werden.</p>
+    </section>
+
+    <!-- HERUMREICHEN -->
+    <section class="screen" id="screen-pass">
+      <header class="bar"><button class="back" data-action="home">‹</button><h2 id="pass-title">Spieler 1</h2><span class="pill" id="pass-progress">1/6</span></header>
+      <div class="flip" id="pass-card" role="button" tabindex="0">
+        <div class="flip-inner">
+          <div class="face front"><div class="big-emoji">🤫</div><p id="pass-front-text">Gib das Handy an Spieler 1</p><p class="muted small">Dann tippen zum Aufdecken</p></div>
+          <div class="face face-back" id="pass-card-back"></div>
+        </div>
+      </div>
+      <button class="btn primary big hidden" id="pass-next" data-action="pass-next">Verdecken &amp; weitergeben ▶</button>
+    </section>
+
+    <!-- ALLE HABEN IHR WORT -->
+    <section class="screen" id="screen-ready">
+      <div class="hero">
+        <div class="logo">🗣️</div>
+        <h1>Alle bereit!</h1>
+        <p class="sub" id="ready-starter"></p>
+        <p class="muted">Reihum sagt jeder ein Wort, das zu seinem Begriff passt. Danach wird diskutiert und abgestimmt, wer der Imposter ist.</p>
+      </div>
+      <div class="stack">
+        <button class="btn secondary big" data-action="reveal">🔍 Auflösen</button>
+        <button class="btn primary big" data-action="pass-new-round">🔄 Neue Runde</button>
+        <button class="btn ghost" data-action="setup-pass">⚙️ Einstellungen ändern</button>
+      </div>
+    </section>
+
+    <!-- REGELN -->
+    <section class="screen" id="screen-rules">
+      <header class="bar"><button class="back" data-action="home">‹</button><h2>Spielregeln</h2></header>
+      <div class="card rules">
+        <ol>
+          <li>Alle bekommen das <b>gleiche geheime Wort</b> – außer die <b>Imposter</b>.</li>
+          <li>Die Imposter bekommen nur einen <b>Tipp</b>, der zum Wort passt (z.&nbsp;B. „Italien“ für „Pizza“). Sie wissen nicht, wer die anderen Imposter sind.</li>
+          <li>Reihum sagt jeder <b>ein einzelnes Wort</b>, das zu seinem Begriff passt – nicht zu offensichtlich, damit die Imposter es nicht erraten, aber auch nicht so vage, dass man verdächtig wirkt.</li>
+          <li>Nach ein oder zwei Runden wird <b>diskutiert und abgestimmt</b>, wer Imposter ist.</li>
+          <li>Wird ein Imposter enttarnt, darf er noch versuchen, <b>das Wort zu erraten</b> – liegt er richtig, gewinnen trotzdem die Imposter!</li>
+        </ol>
+        <h3>Zwei Modi</h3>
+        <p><b>Jeder mit eigenem Handy:</b> Einer erstellt das Spiel und teilt den Code. Alle geben ihn ein und tippen auf ihre Nummer. Alles wird aus dem Code berechnet – es braucht keinen Server und kein Konto.</p>
+        <p><b>Herumreichen:</b> Ein Handy geht von Spieler zu Spieler, jeder deckt kurz sein Wort auf.</p>
+      </div>
+    </section>
+
+    <!-- AUFLÖSUNG -->
+    <div class="modal hidden" id="reveal-modal">
+      <div class="modal-box">
+        <h2>Auflösung</h2>
+        <p class="muted">Das Wort war</p>
+        <div class="reveal-word" id="reveal-word"></div>
+        <p class="muted" id="reveal-hint"></p>
+        <p class="muted">Imposter:</p>
+        <div class="reveal-imps" id="reveal-imps"></div>
+        <button class="btn primary" data-action="close-modal">Schließen</button>
+      </div>
+    </div>
+
+    <div class="toast hidden" id="toast"></div>
+  </main>
+
+  <script src="words.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
