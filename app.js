@@ -402,7 +402,7 @@ const actions = {
     state.round++;
     persist();
     renderCard();
-    toast(`Runde ${state.round} – alle anderen auch „Nächste Runde“ drücken!`);
+    toast(`✓ Runde ${state.round} gestartet`);
   },
   "pass-next": passNext,
   "pass-new-round": () => {
