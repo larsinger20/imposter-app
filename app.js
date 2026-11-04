@@ -4,7 +4,7 @@
 const $ = (sel) => document.querySelector(sel);
 const ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"; // ohne 0/O/1/I – leichter abzutippen
 const MIN_PLAYERS = 3, MAX_PLAYERS = 20, MAX_IMPOSTERS = 5;
-const STORE_KEY = "imposter-state-v1";
+const STORE_KEY = "imposter-state-v2";
 
 function hashString(str) {
   let h = 2166136261 >>> 0;
@@ -44,14 +44,14 @@ function storageSet(obj) {
 }
 
 /* ===================== Spielcode ===================== */
-// Aufbau (9 Zeichen): 4x Zufall | Spieler | Imposter | 2x Kategorien+Tipp | Prüfzeichen
+// Aufbau (9 Zeichen): 3x Zufall | Spieler | Imposter | 3x Kategorien+Tipp (15 Bit) | Prüfzeichen
 function encodeCode(cfg) {
   let s = "";
-  for (let i = 0; i < 4; i++) s += ALPHABET[Math.floor(Math.random() * 32)];
+  for (let i = 0; i < 3; i++) s += ALPHABET[Math.floor(Math.random() * 32)];
   s += ALPHABET[cfg.players - MIN_PLAYERS];
   s += ALPHABET[cfg.imposters];
-  const bits = (cfg.mask << 1) | (cfg.hints ? 1 : 0); // max 9 Bit
-  s += ALPHABET[bits >> 5] + ALPHABET[bits & 31];
+  const bits = (cfg.mask << 1) | (cfg.hints ? 1 : 0); // bis 14 Kategorien + Tipp = 15 Bit
+  s += ALPHABET[(bits >> 10) & 31] + ALPHABET[(bits >> 5) & 31] + ALPHABET[bits & 31];
   s += ALPHABET[hashString(s) % 32];
   return s;
 }
@@ -63,12 +63,12 @@ function decodeCode(raw) {
   if (s.length !== 9) return null;
   for (const ch of s) if (!ALPHABET.includes(ch)) return null;
   if (ALPHABET[hashString(s.slice(0, 8)) % 32] !== s[8]) return null;
-  const players = ALPHABET.indexOf(s[4]) + MIN_PLAYERS;
-  const imposters = ALPHABET.indexOf(s[5]);
-  const bits = (ALPHABET.indexOf(s[6]) << 5) | ALPHABET.indexOf(s[7]);
+  const players = ALPHABET.indexOf(s[3]) + MIN_PLAYERS;
+  const imposters = ALPHABET.indexOf(s[4]);
+  const bits = (ALPHABET.indexOf(s[5]) << 10) | (ALPHABET.indexOf(s[6]) << 5) | ALPHABET.indexOf(s[7]);
   const hints = (bits & 1) === 1;
   const mask = bits >> 1;
-  if (players > MAX_PLAYERS || imposters < 1 || imposters > maxImposters(players) || mask === 0) return null;
+  if (players > MAX_PLAYERS || imposters < 1 || imposters > maxImposters(players) || mask === 0 || mask >= (1 << CATEGORIES.length)) return null;
   return { code: s, players, imposters, hints, mask };
 }
 function formatCode(s) {
@@ -136,6 +136,8 @@ function renderSetup() {
   document.querySelector('[data-step="imposters"][data-delta="-1"]').disabled = s.imposters <= 1;
   document.querySelector('[data-step="imposters"][data-delta="1"]').disabled = s.imposters >= maxImposters(s.players);
   $("#hint-toggle").checked = s.hints;
+  const count = CATEGORIES.reduce((n, c, i) => n + (s.mask & (1 << i) ? c.words.length : 0), 0);
+  $("#word-count").textContent = `(${count} Wörter – keine Wiederholung innerhalb eines Spiels)`;
 
   const chips = $("#category-chips");
   chips.innerHTML = "";
