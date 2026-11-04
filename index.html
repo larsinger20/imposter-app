@@ -49,6 +49,11 @@
       </div>
 
       <div class="card">
+        <label class="label">Namen <span class="hint">(optional)</span></label>
+        <div class="names" id="name-inputs"></div>
+      </div>
+
+      <div class="card">
         <label class="label">Kategorien <span class="hint" id="word-count"></span></label>
         <div class="chips" id="category-chips"></div>
       </div>
@@ -71,6 +76,7 @@
         <p class="muted">Alle öffnen diese Seite und geben den Code ein:</p>
         <div class="code" id="host-code"></div>
         <p class="muted small" id="host-info"></p>
+        <p class="muted small hidden" id="host-names-note">Die Namen werden nur über den Link mitgeschickt – wer den Code von Hand eintippt, sieht Nummern.</p>
         <div class="stack">
           <button class="btn secondary" data-action="share">🔗 Link teilen</button>
         </div>
@@ -92,7 +98,7 @@
     <!-- BOARD: PLATZ WÄHLEN -->
     <section class="screen" id="screen-board">
       <header class="bar"><button class="back" data-action="home">‹</button><h2>Wer bist du?</h2></header>
-      <p class="muted center">Jeder tippt auf <b>seine eigene</b> Nummer – sprecht euch vorher ab, wer welche Nummer hat.</p>
+      <p class="muted center" id="board-help">Jeder tippt auf <b>seine eigene</b> Nummer – sprecht euch vorher ab, wer welche Nummer hat.</p>
       <div class="board" id="seat-board"></div>
     </section>
 

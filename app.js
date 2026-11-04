@@ -92,10 +92,28 @@ function computeRound(game, round) {
   return { word, hint, imposters, starter };
 }
 
+/* ===================== Namen ===================== */
+const MAX_NAME_LEN = 16;
+function esc(str) {
+  return String(str).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+function cleanName(n) {
+  return String(n || "").replace(/[,\n\r]/g, " ").replace(/\s+/g, " ").trim().slice(0, MAX_NAME_LEN);
+}
+// Liefert ein Namens-Array passend zur Spielerzahl oder null, wenn niemand einen Namen hat.
+function namesFor(list, players) {
+  const names = Array.from({ length: players }, (_, i) => cleanName(list && list[i]));
+  return names.some(Boolean) ? names : null;
+}
+function playerName(i) {
+  const n = state.game && state.game.names && state.game.names[i - 1];
+  return n || `Spieler ${i}`;
+}
+
 /* ===================== Zustand ===================== */
 const state = {
   mode: "multi",            // "multi" | "pass"
-  setup: { players: 6, imposters: 2, hints: true, mask: (1 << CATEGORIES.length) - 1 },
+  setup: { players: 6, imposters: 2, hints: true, mask: (1 << CATEGORIES.length) - 1, names: [] },
   game: null,               // decodierter Code
   round: 1,
   seat: null,               // eigener Platz (multi)
@@ -106,7 +124,7 @@ function persist() {
   const saved = storageGet();
   saved.setup = state.setup;
   if (state.mode === "multi" && state.game) {
-    saved.multi = { code: state.game.code, round: state.round, seat: state.seat };
+    saved.multi = { code: state.game.code, round: state.round, seat: state.seat, names: state.game.names };
   }
   storageSet(saved);
 }
@@ -139,6 +157,8 @@ function renderSetup() {
   const count = CATEGORIES.reduce((n, c, i) => n + (s.mask & (1 << i) ? c.words.length : 0), 0);
   $("#word-count").textContent = `(${count} Wörter – keine Wiederholung innerhalb eines Spiels)`;
 
+  renderNameInputs();
+
   const chips = $("#category-chips");
   chips.innerHTML = "";
   CATEGORIES.forEach((cat, idx) => {
@@ -153,6 +173,23 @@ function renderSetup() {
     };
     chips.appendChild(b);
   });
+}
+function renderNameInputs() {
+  const s = state.setup;
+  const box = $("#name-inputs");
+  // vorhandene Eingaben übernehmen, bevor neu gezeichnet wird
+  box.querySelectorAll("input").forEach((inp, i) => { s.names[i] = inp.value; });
+  box.innerHTML = "";
+  for (let i = 0; i < s.players; i++) {
+    const inp = document.createElement("input");
+    inp.className = "name-input";
+    inp.maxLength = MAX_NAME_LEN;
+    inp.placeholder = `Spieler ${i + 1}`;
+    inp.value = s.names[i] || "";
+    inp.autocomplete = "off";
+    inp.oninput = () => { s.names[i] = inp.value; };
+    box.appendChild(inp);
+  }
 }
 function openSetup(mode) {
   state.mode = mode;
@@ -175,12 +212,14 @@ function startGame() {
   state.setup.hints = $("#hint-toggle").checked;
   const code = encodeCode(state.setup);
   state.game = decodeCode(code);
+  state.game.names = namesFor(state.setup.names, state.game.players);
   state.round = 1;
   state.seat = null;
   persist();
   if (state.mode === "multi") {
     $("#host-code").textContent = formatCode(code);
     $("#host-info").textContent = gameInfo(state.game);
+    $("#host-names-note").classList.toggle("hidden", !state.game.names);
     show("host");
   } else {
     state.passIndex = 1;
@@ -192,7 +231,9 @@ function gameInfo(g) {
   return `${g.players} Spieler · ${g.imposters} Imposter · ${g.hints ? "mit Tipp" : "ohne Tipp"}`;
 }
 function shareLink() {
-  const url = location.origin + location.pathname + "?g=" + state.game.code;
+  const params = new URLSearchParams({ g: state.game.code });
+  if (state.game.names) params.set("n", state.game.names.join(","));
+  const url = location.origin + location.pathname + "?" + params.toString();
   const text = `Imposter-Spiel – Code ${formatCode(state.game.code)}`;
   if (navigator.share) {
     navigator.share({ title: "Imposter", text, url }).catch(() => {});
@@ -204,7 +245,7 @@ function shareLink() {
 }
 
 /* ===================== Beitreten / Board ===================== */
-function joinWithCode(raw) {
+function joinWithCode(raw, linkNames) {
   const game = decodeCode(raw);
   if (!game) {
     $("#join-error").textContent = "Ungültiger Code – bitte nochmal prüfen.";
@@ -216,6 +257,7 @@ function joinWithCode(raw) {
   state.game = game;
   state.round = same ? saved.round : 1;
   state.seat = same ? saved.seat : null;
+  game.names = namesFor(linkNames || (same && saved.names), game.players);
   persist();
   renderBoard();
   show("board");
@@ -224,12 +266,18 @@ function joinWithCode(raw) {
 function renderBoard() {
   const board = $("#seat-board");
   board.innerHTML = "";
+  $("#board-help").innerHTML = state.game.names
+    ? "Tippe auf <b>deinen eigenen</b> Namen."
+    : "Jeder tippt auf <b>seine eigene</b> Nummer – sprecht euch vorher ab, wer welche Nummer hat.";
   for (let i = 1; i <= state.game.players; i++) {
     const b = document.createElement("button");
-    b.className = "seat" + (state.seat === i ? " mine" : "");
-    b.innerHTML = `${i}<small>${state.seat === i ? "du" : "Spieler"}</small>`;
+    const name = state.game.names && state.game.names[i - 1];
+    b.className = "seat" + (state.seat === i ? " mine" : "") + (name ? " named" : "");
+    b.innerHTML = name
+      ? `<span class="seat-name">${esc(name)}</span><small>${state.seat === i ? "du" : "Nr. " + i}</small>`
+      : `${i}<small>${state.seat === i ? "du" : "Spieler"}</small>`;
     b.onclick = () => {
-      if (state.seat !== i && !confirm(`Bist du wirklich Spieler ${i}?`)) return;
+      if (state.seat !== i && !confirm(`Bist du wirklich ${playerName(i)}?`)) return;
       state.seat = i;
       persist();
       renderCard();
@@ -268,12 +316,12 @@ function setupFlip(el, onOpen) {
 function renderCard() {
   const r = computeRound(state.game, state.round);
   const c = cardHTML(r, state.seat, state.game.hints);
-  $("#card-title").textContent = `Spieler ${state.seat}`;
+  $("#card-title").textContent = playerName(state.seat);
   $("#card-round").textContent = `Runde ${state.round}`;
   const back = $("#my-card-back");
   back.innerHTML = c.html;
   back.classList.toggle("imp", c.imp);
-  $("#card-meta").textContent = `${gameInfo(state.game)} · Spieler ${r.starter} beginnt`;
+  $("#card-meta").textContent = `${gameInfo(state.game)} · ${playerName(r.starter)} beginnt`;
   setupFlip($("#my-card"));
 }
 
@@ -281,9 +329,9 @@ function renderCard() {
 function renderPass() {
   const r = computeRound(state.game, state.round);
   const i = state.passIndex;
-  $("#pass-title").textContent = `Spieler ${i}`;
+  $("#pass-title").textContent = playerName(i);
   $("#pass-progress").textContent = `${i}/${state.game.players}`;
-  $("#pass-front-text").textContent = `Gib das Handy an Spieler ${i}`;
+  $("#pass-front-text").textContent = `Gib das Handy an ${playerName(i)}`;
   const c = cardHTML(r, i, state.game.hints);
   const back = $("#pass-card-back");
   back.innerHTML = c.html;
@@ -299,7 +347,7 @@ function passNext() {
     setTimeout(renderPass, 250); // erst zudrehen, dann neuen Inhalt laden
   } else {
     const r = computeRound(state.game, state.round);
-    $("#ready-starter").textContent = `Spieler ${r.starter} beginnt.`;
+    $("#ready-starter").textContent = `${playerName(r.starter)} beginnt.`;
     show("ready");
   }
 }
@@ -310,7 +358,7 @@ function reveal() {
   const r = computeRound(state.game, state.round);
   $("#reveal-word").textContent = r.word;
   $("#reveal-hint").textContent = state.game.hints ? `Tipp für die Imposter: „${r.hint}“` : "";
-  $("#reveal-imps").innerHTML = r.imposters.map((n) => `<span>Spieler ${n}</span>`).join("");
+  $("#reveal-imps").innerHTML = r.imposters.map((n) => `<span>${esc(playerName(n))}</span>`).join("");
   $("#reveal-modal").classList.remove("hidden");
 }
 
@@ -372,7 +420,8 @@ $("#code-input").addEventListener("input", (e) => {
   const g = params.get("g");
   if (g) {
     history.replaceState(null, "", location.pathname);
-    if (joinWithCode(g)) return;
+    const n = params.get("n");
+    if (joinWithCode(g, n ? n.split(",") : null)) return;
     $("#code-input").value = g;
     show("join");
   }
