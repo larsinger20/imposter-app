@@ -126,11 +126,18 @@ function persist() {
   if (state.mode === "multi" && state.game) {
     saved.multi = { code: state.game.code, round: state.round, seat: state.seat, names: state.game.names };
   }
+  if (state.mode === "pass" && state.game) {
+    saved.pass = { code: state.game.code, round: state.round, passIndex: state.passIndex, names: state.game.names };
+  }
+  saved.screen = state.screen;
+  saved.at = Date.now();
   storageSet(saved);
 }
 
 /* ===================== Navigation ===================== */
 function show(id) {
+  state.screen = id;
+  persist(); // damit nach einem Neuladen (z. B. Handy gesperrt) genau hier weitergemacht wird
   document.querySelectorAll(".screen").forEach((s) => s.classList.toggle("active", s.id === "screen-" + id));
   window.scrollTo(0, 0);
 }
@@ -217,15 +224,18 @@ function startGame() {
   state.seat = null;
   persist();
   if (state.mode === "multi") {
-    $("#host-code").textContent = formatCode(code);
-    $("#host-info").textContent = gameInfo(state.game);
-    $("#host-names-note").classList.toggle("hidden", !state.game.names);
+    renderHost();
     show("host");
   } else {
     state.passIndex = 1;
     renderPass();
     show("pass");
   }
+}
+function renderHost() {
+  $("#host-code").textContent = formatCode(state.game.code);
+  $("#host-info").textContent = gameInfo(state.game);
+  $("#host-names-note").classList.toggle("hidden", !state.game.names);
 }
 function gameInfo(g) {
   return `${g.players} Spieler · ${g.imposters} Imposter · ${g.hints ? "mit Tipp" : "ohne Tipp"}`;
@@ -344,12 +354,17 @@ function passNext() {
   $("#pass-card").classList.remove("open");
   if (state.passIndex < state.game.players) {
     state.passIndex++;
+    persist();
     setTimeout(renderPass, 250); // erst zudrehen, dann neuen Inhalt laden
   } else {
-    const r = computeRound(state.game, state.round);
-    $("#ready-starter").textContent = `${playerName(r.starter)} beginnt.`;
+    renderReady();
     show("ready");
   }
+}
+
+function renderReady() {
+  const r = computeRound(state.game, state.round);
+  $("#ready-starter").textContent = `${playerName(r.starter)} beginnt.`;
 }
 
 /* ===================== Auflösung ===================== */
@@ -424,5 +439,33 @@ $("#code-input").addEventListener("input", (e) => {
     if (joinWithCode(g, n ? n.split(",") : null)) return;
     $("#code-input").value = g;
     show("join");
+    return;
   }
+  resume(saved);
 })();
+
+// Nach einem Neuladen (Handy gesperrt, Tab vom Browser verworfen) zum letzten Spielbildschirm zurück.
+function resume(saved) {
+  if (!saved.at || Date.now() - saved.at > 12 * 60 * 60 * 1000) return; // altes Spiel von gestern? -> Startseite
+  const screen = saved.screen;
+  const isPass = screen === "pass" || screen === "ready";
+  const isMulti = screen === "host" || screen === "board" || screen === "card";
+  const src = isPass ? saved.pass : isMulti ? saved.multi : null;
+  const game = src && decodeCode(src.code);
+  if (!game) return;
+  game.names = namesFor(src.names, game.players);
+  state.game = game;
+  state.round = src.round || 1;
+  if (isPass) {
+    state.mode = "pass";
+    state.passIndex = Math.min(src.passIndex || 1, game.players);
+    if (screen === "pass") renderPass(); else renderReady();
+    show(screen);
+  } else {
+    state.mode = "multi";
+    state.seat = src.seat || null;
+    if (screen === "card" && state.seat) { renderCard(); show("card"); }
+    else if (screen === "host") { renderHost(); show("host"); }
+    else { renderBoard(); show("board"); }
+  }
+}
