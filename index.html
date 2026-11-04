@@ -6,7 +6,9 @@
   <meta name="theme-color" content="#14111f">
   <title>Imposter – Partyspiel</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕵️</text></svg>">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=5">
+  <!-- Versionsnummer bei jeder Änderung an CSS/JS erhöhen, sonst nutzen Handys alte Dateien aus dem Cache -->
+  <style>.sheet-layer { visibility: hidden; position: fixed; }</style>
 </head>
 <body>
   <main id="app">
@@ -184,7 +186,7 @@
     <div class="toast hidden" id="toast"></div>
   </main>
 
-  <script src="words.js"></script>
-  <script src="app.js"></script>
+  <script src="words.js?v=5"></script>
+  <script src="app.js?v=5"></script>
 </body>
 </html>

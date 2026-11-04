@@ -24,6 +24,8 @@ Repository → **Settings → Pages** → Source: „Deploy from a branch“ →
 Danach ist die App unter `https://<benutzername>.github.io/imposter-app/` erreichbar.
 
 ## Wörter ergänzen
+Nach Änderungen an `style.css`, `app.js` oder `words.js` die Versionsnummer (`?v=…`) in `index.html` erhöhen, sonst nutzen Handys noch alte Dateien aus dem Cache.
+
 In `words.js` – neue Wörter nur **am Ende** einer Kategorie anhängen (neue Kategorien ans Ende der Liste, max. 14), damit bestehende Codes gleich bleiben.
 
 ## Design
