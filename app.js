@@ -44,15 +44,21 @@ function storageSet(obj) {
 }
 
 /* ===================== Spielcode ===================== */
-// Aufbau (9 Zeichen): 3x Zufall | Spieler | Imposter | 3x Kategorien+Tipp (15 Bit) | Prüfzeichen
-function encodeCode(cfg) {
-  let s = "";
-  for (let i = 0; i < 3; i++) s += ALPHABET[Math.floor(Math.random() * 32)];
+// Aufbau: 3x Zufall | Spieler | Imposter | 3x Kategorien+Tipp (15 Bit) | [2x Wortstapel-Position] | Prüfzeichen
+//  - 9 Zeichen:  neues Spiel, Wortstapel beginnt vorne
+//  - 11 Zeichen: nach „Spieler ändern“ – Wortstapel läuft an Position `offset` weiter
+// Der Wortstapel hängt nur von Zufall + Kategorien ab, nicht von der Spielerzahl.
+// Prüfzeichen v2 = (hash + 1) % 32; Codes mit altem Prüfzeichen (hash % 32) laufen weiter wie früher.
+const MAX_OFFSET = 32 * 32 - 1;
+function encodeCode(cfg, seed, offset = 0) {
+  let s = seed || "";
+  while (s.length < 3) s += ALPHABET[Math.floor(Math.random() * 32)];
   s += ALPHABET[cfg.players - MIN_PLAYERS];
   s += ALPHABET[cfg.imposters];
   const bits = (cfg.mask << 1) | (cfg.hints ? 1 : 0); // bis 14 Kategorien + Tipp = 15 Bit
   s += ALPHABET[(bits >> 10) & 31] + ALPHABET[(bits >> 5) & 31] + ALPHABET[bits & 31];
-  s += ALPHABET[hashString(s) % 32];
+  if (offset > 0) s += ALPHABET[(offset >> 5) & 31] + ALPHABET[offset & 31];
+  s += ALPHABET[(hashString(s) + 1) % 32];
   return s;
 }
 function cleanCode(input) {
@@ -60,19 +66,27 @@ function cleanCode(input) {
 }
 function decodeCode(raw) {
   const s = cleanCode(raw);
-  if (s.length !== 9) return null;
+  if (s.length !== 9 && s.length !== 11) return null;
   for (const ch of s) if (!ALPHABET.includes(ch)) return null;
-  if (ALPHABET[hashString(s.slice(0, 8)) % 32] !== s[8]) return null;
+  const body = s.slice(0, -1), h = hashString(body);
+  let legacy = false;
+  if (ALPHABET[(h + 1) % 32] !== s[s.length - 1]) {
+    if (s.length === 9 && ALPHABET[h % 32] === s[8]) legacy = true; // Code aus älterer Version
+    else return null;
+  }
   const players = ALPHABET.indexOf(s[3]) + MIN_PLAYERS;
   const imposters = ALPHABET.indexOf(s[4]);
   const bits = (ALPHABET.indexOf(s[5]) << 10) | (ALPHABET.indexOf(s[6]) << 5) | ALPHABET.indexOf(s[7]);
   const hints = (bits & 1) === 1;
   const mask = bits >> 1;
+  const offset = s.length === 11 ? (ALPHABET.indexOf(s[8]) << 5) | ALPHABET.indexOf(s[9]) : 0;
   if (players > MAX_PLAYERS || imposters < 1 || imposters > maxImposters(players) || mask === 0 || mask >= (1 << CATEGORIES.length)) return null;
-  return { code: s, players, imposters, hints, mask };
+  const seed = s.slice(0, 3);
+  const wordKey = legacy ? s : seed + ":" + mask;
+  return { code: s, seed, players, imposters, hints, mask, offset, wordKey };
 }
 function formatCode(s) {
-  return s.slice(0, 3) + "-" + s.slice(3, 6) + "-" + s.slice(6, 9);
+  return s.match(/.{1,3}/g).join("-");
 }
 
 /* ===================== Runde berechnen ===================== */
@@ -82,8 +96,8 @@ function computeRound(game, round) {
   CATEGORIES.forEach((cat, idx) => {
     if (game.mask & (1 << idx)) cat.words.forEach((w) => pool.push(w));
   });
-  const order = shuffle(pool.map((_, i) => i), mulberry32(hashString(game.code + ":words")));
-  const [word, hint] = pool[order[(round - 1) % order.length]];
+  const order = shuffle(pool.map((_, i) => i), mulberry32(hashString(game.wordKey + ":words")));
+  const [word, hint] = pool[order[(game.offset + round - 1) % order.length]];
 
   const rng = mulberry32(hashString(game.code + ":round:" + round));
   const seats = shuffle(Array.from({ length: game.players }, (_, i) => i + 1), rng);
@@ -200,9 +214,30 @@ function renderNameInputs() {
 }
 function openSetup(mode) {
   state.mode = mode;
+  state.editing = false;
   $("#setup-title").textContent = mode === "multi" ? "Spiel erstellen" : "Handy herumreichen";
+  setSetupEditMode(false);
   renderSetup();
   show("setup");
+}
+// Spieler ändern: gleiche Kategorien, Wortstapel läuft einfach weiter.
+function openEditPlayers() {
+  if (!state.game) return;
+  state.editing = true;
+  state.setup.players = state.game.players;
+  state.setup.imposters = state.game.imposters;
+  state.setup.names = state.game.names ? state.game.names.slice() : [];
+  $("#name-inputs").innerHTML = ""; // Eingaben neu aus state.setup.names aufbauen
+  $("#setup-title").textContent = "Spieler ändern";
+  setSetupEditMode(true);
+  renderSetup();
+  show("setup");
+}
+function setSetupEditMode(on) {
+  $("#category-chips").closest(".card").classList.toggle("hidden", on);
+  $("#hint-toggle").closest(".card").classList.toggle("hidden", on);
+  $("#edit-note").classList.toggle("hidden", !on);
+  $("#start-btn").textContent = on ? "Weiterspielen ▶" : "Los geht's ▶";
 }
 function stepSetup(key, delta) {
   const s = state.setup;
@@ -216,8 +251,17 @@ function stepSetup(key, delta) {
   renderSetup();
 }
 function startGame() {
-  state.setup.hints = $("#hint-toggle").checked;
-  const code = encodeCode(state.setup);
+  let code;
+  if (state.editing && state.game) {
+    const g = state.game;
+    // bereits gespielte Runden überspringen -> keine Wiederholung
+    const offset = Math.min(MAX_OFFSET, g.offset + state.round);
+    code = encodeCode({ ...state.setup, mask: g.mask, hints: g.hints }, g.seed, offset);
+    state.editing = false;
+  } else {
+    state.setup.hints = $("#hint-toggle").checked;
+    code = encodeCode(state.setup);
+  }
   state.game = decodeCode(code);
   state.game.names = namesFor(state.setup.names, state.game.players);
   state.round = 1;
@@ -236,6 +280,7 @@ function renderHost() {
   $("#host-code").textContent = formatCode(state.game.code);
   $("#host-info").textContent = gameInfo(state.game);
   $("#host-names-note").classList.toggle("hidden", !state.game.names);
+  $("#host-continue-note").classList.toggle("hidden", !state.game.offset);
 }
 function gameInfo(g) {
   return `${g.players} Spieler · ${g.imposters} Imposter · ${g.hints ? "mit Tipp" : "ohne Tipp"}`;
@@ -494,6 +539,7 @@ const actions = {
   rules: () => show("rules"),
   "setup-multi": () => openSetup("multi"),
   "setup-pass": () => openSetup("pass"),
+  "edit-players": openEditPlayers,
   start: startGame,
   share: shareLink,
   "host-join": () => { renderBoard(); show("board"); },
@@ -537,8 +583,8 @@ document.addEventListener("click", (e) => {
 $("#hint-toggle").addEventListener("change", (e) => { state.setup.hints = e.target.checked; });
 $("#code-input").addEventListener("keydown", (e) => { if (e.key === "Enter") actions["join-submit"](); });
 $("#code-input").addEventListener("input", (e) => {
-  const c = cleanCode(e.target.value).slice(0, 9);
-  e.target.value = c.length > 6 ? formatCode(c) : c.length > 3 ? c.slice(0, 3) + "-" + c.slice(3) : c;
+  const c = cleanCode(e.target.value).slice(0, 11);
+  e.target.value = c ? formatCode(c) : "";
   $("#join-error").textContent = "";
 });
 

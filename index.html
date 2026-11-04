@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#14111f">
   <title>Imposter – Partyspiel</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕵️</text></svg>">
-  <link rel="stylesheet" href="style.css?v=5">
+  <link rel="stylesheet" href="style.css?v=6">
   <!-- Versionsnummer bei jeder Änderung an CSS/JS erhöhen, sonst nutzen Handys alte Dateien aus dem Cache -->
   <style>.sheet-layer { visibility: hidden; position: fixed; }</style>
 </head>
@@ -68,7 +68,8 @@
         </label>
       </div>
 
-      <button class="btn primary big" data-action="start">Los geht's ▶</button>
+      <p class="muted center small hidden" id="edit-note">Kategorien bleiben gleich – die Wörter gehen einfach weiter, ohne Wiederholung.</p>
+      <button class="btn primary big" data-action="start" id="start-btn">Los geht's ▶</button>
     </section>
 
     <!-- HOST: CODE TEILEN -->
@@ -78,6 +79,7 @@
         <p class="muted">Alle öffnen diese Seite und geben den Code ein:</p>
         <div class="code" id="host-code"></div>
         <p class="muted small" id="host-info"></p>
+        <p class="muted small hidden" id="host-continue-note">Neuer Code, weil sich die Spieler geändert haben – alle treten einmal neu bei. Die Wörter gehen nahtlos weiter.</p>
         <p class="muted small hidden" id="host-names-note">Die Namen werden nur über den Link mitgeschickt – wer den Code von Hand eintippt, sieht Nummern.</p>
         <div class="stack">
           <button class="btn secondary" data-action="share">🔗 Link teilen</button>
@@ -91,7 +93,7 @@
       <header class="bar"><button class="back" data-action="home">‹</button><h2>Spiel beitreten</h2></header>
       <div class="card">
         <label class="label" for="code-input">Spielcode</label>
-        <input id="code-input" class="code-input" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXX-XXX-XXX" maxlength="11">
+        <input id="code-input" class="code-input" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXX-XXX-XXX" maxlength="14">
         <p class="error" id="join-error"></p>
       </div>
       <button class="btn primary big" data-action="join-submit">Beitreten ▶</button>
@@ -102,6 +104,7 @@
       <header class="bar"><button class="back" data-action="home">‹</button><h2>Wer bist du?</h2></header>
       <p class="muted center" id="board-help">Jeder tippt auf <b>seine eigene</b> Nummer – sprecht euch vorher ab, wer welche Nummer hat.</p>
       <div class="board" id="seat-board"></div>
+      <button class="btn ghost" data-action="edit-players">👥 Spieler ändern</button>
     </section>
 
     <!-- KARTE (eigenes Handy) -->
@@ -148,7 +151,8 @@
       <div class="stack">
         <button class="btn secondary big" data-action="reveal">🔍 Auflösen</button>
         <button class="btn primary big" data-action="pass-new-round">🔄 Neue Runde</button>
-        <button class="btn ghost" data-action="setup-pass">⚙️ Einstellungen ändern</button>
+        <button class="btn ghost" data-action="edit-players">👥 Spieler ändern</button>
+        <button class="btn ghost" data-action="setup-pass">⚙️ Neues Spiel</button>
       </div>
     </section>
 
@@ -186,7 +190,7 @@
     <div class="toast hidden" id="toast"></div>
   </main>
 
-  <script src="words.js?v=5"></script>
-  <script src="app.js?v=5"></script>
+  <script src="words.js?v=6"></script>
+  <script src="app.js?v=6"></script>
 </body>
 </html>

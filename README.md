@@ -18,6 +18,8 @@ Alle bekommen dasselbe geheime Wort, nur die 1–5 **Imposter** bekommen ein Tip
 800 deutsche Wortpaare (Wort + passender Tipp) in 14 Kategorien, direkt in `words.js`.
 Es wird keine Datenbank gebraucht: Die Liste wird einfach mit der Seite geladen.
 Innerhalb eines Spiels (ein Code, beliebig viele Runden) wiederholt sich kein Wort, bis alle durch sind.
+Kommen Spieler dazu oder gehen, über **„👥 Spieler ändern“** (auf dem Board bzw. nach dem Herumreichen) anpassen:
+Der Wortstapel läuft einfach weiter. Der neue Code ist dann 11 Zeichen lang, weil er die Position im Stapel enthält.
 
 ## GitHub Pages aktivieren
 Repository → **Settings → Pages** → Source: „Deploy from a branch“ → Branch `main` / `(root)` → Save.
