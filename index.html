@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#14111f">
   <title>Imposter – Partyspiel</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕵️</text></svg>">
-  <link rel="stylesheet" href="style.css?v=7">
+  <link rel="stylesheet" href="style.css?v=8">
   <!-- Versionsnummer bei jeder Änderung an CSS/JS erhöhen, sonst nutzen Handys alte Dateien aus dem Cache -->
   <style>.sheet-layer { visibility: hidden; position: fixed; }</style>
 </head>
@@ -114,6 +114,7 @@
         <h2 id="card-title">Spieler 1</h2>
         <span class="pill" id="card-round">Runde 1</span>
       </header>
+      <div class="starter" id="card-starter"></div>
       <div class="flip" id="my-card" role="button" tabindex="0">
         <div class="flip-inner">
           <div class="face front"><div class="big-emoji">🂠</div><p>Gedrückt halten zum Anzeigen</p><p class="muted small">Loslassen – und die Karte ist wieder verdeckt.</p></div>
@@ -145,7 +146,7 @@
       <div class="hero">
         <div class="logo">🗣️</div>
         <h1>Alle bereit!</h1>
-        <p class="sub" id="ready-starter"></p>
+        <div class="starter big" id="ready-starter"></div>
         <p class="muted">Reihum sagt jeder ein Wort, das zu seinem Begriff passt. Danach wird diskutiert und abgestimmt, wer der Imposter ist.</p>
       </div>
       <div class="stack">
@@ -190,7 +191,7 @@
     <div class="toast hidden" id="toast"></div>
   </main>
 
-  <script src="words.js?v=7"></script>
-  <script src="app.js?v=7"></script>
+  <script src="words.js?v=8"></script>
+  <script src="app.js?v=8"></script>
 </body>
 </html>

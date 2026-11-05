@@ -185,8 +185,10 @@ const cardInfo = (h) => ({ imp: h.text.includes("Du bist Imposter"), word: h.wor
       const shouldImp = exp.imposters.includes(i + 1);
       check(`R${round} Handy ${i + 1}: Rolle korrekt`, info.imp === shouldImp);
       check(`R${round} Handy ${i + 1}: ${shouldImp ? "Tipp" : "Wort"} korrekt`, info.word === (shouldImp ? exp.hint : exp.word), `${info.word} ≠ ${shouldImp ? exp.hint : exp.word}`);
-      const meta = await p.textContent("#card-meta");
-      check(`R${round} Handy ${i + 1}: gleicher Startspieler`, meta.includes(L.esc(game.names[exp.starter - 1] || `Spieler ${exp.starter}`).replace(/&lt;/g, "<").replace(/&gt;/g, ">")));
+      const st = await p.textContent("#card-starter");
+      const stName = game.names[exp.starter - 1] || `Spieler ${exp.starter}`;
+      check(`R${round} Handy ${i + 1}: Startspieler gut sichtbar über der Karte`, await p.isVisible("#card-starter"));
+      check(`R${round} Handy ${i + 1}: gleicher Startspieler`, exp.starter === i + 1 ? st.includes("Du beginnst") : st.includes(`${stName} beginnt`), st);
     }
     check(`R${round}: genau 2 Imposter`, res.filter((r) => r.imp).length === 2);
     check(`R${round}: alle Nicht-Imposter haben dasselbe Wort`, new Set(res.filter((r) => !r.imp).map((r) => r.word)).size === 1);

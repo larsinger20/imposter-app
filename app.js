@@ -411,7 +411,8 @@ function renderCard() {
   const back = $("#my-card-back");
   back.innerHTML = c.html;
   back.classList.toggle("imp", c.imp);
-  $("#card-meta").textContent = `${gameInfo(state.game)} · ${playerName(r.starter)} beginnt`;
+  $("#card-meta").textContent = gameInfo(state.game);
+  setStarter($("#card-starter"), r.starter, r.starter === state.seat);
   setupFlip($("#my-card"));
 }
 
@@ -442,9 +443,16 @@ function passNext() {
   }
 }
 
+// Gut sichtbarer Hinweis, wer die Runde beginnt (ohne die Karte aufzudecken)
+function setStarter(el, seat, isMe) {
+  el.innerHTML = isMe
+    ? `<span class="starter-icon">🎤</span><span><b>Du beginnst!</b></span>`
+    : `<span class="starter-icon">🎤</span><span><b>${esc(playerName(seat))}</b> beginnt</span>`;
+  el.classList.toggle("me", isMe);
+}
 function renderReady() {
   const r = computeRound(state.game, state.round);
-  $("#ready-starter").textContent = `${playerName(r.starter)} beginnt.`;
+  setStarter($("#ready-starter"), r.starter, false);
 }
 
 /* ===================== Auflösung ===================== */
