@@ -15,7 +15,7 @@ Alle bekommen dasselbe geheime Wort, nur die 1–5 **Imposter** bekommen ein Tip
 3–20 Spieler, 1–5 Imposter (Vorschlag: ca. jeder Dritte), Tipp für Imposter an/aus.
 
 ## Wörter – ohne Datenbank
-800 deutsche Wortpaare (Wort + passender Tipp) in 14 Kategorien, direkt in `words.js`.
+1058 deutsche Wortpaare (Wort + bewusst vager Tipp) in 14 Kategorien, direkt in `words.js`.
 Es wird keine Datenbank gebraucht: Die Liste wird einfach mit der Seite geladen.
 Innerhalb eines Spiels (ein Code, beliebig viele Runden) wiederholt sich kein Wort, bis alle durch sind.
 Kommen Spieler dazu oder gehen, über **„👥 Spieler ändern“** (auf dem Board bzw. nach dem Herumreichen) anpassen:
@@ -26,9 +26,21 @@ Repository → **Settings → Pages** → Source: „Deploy from a branch“ →
 Danach ist die App unter `https://<benutzername>.github.io/imposter-app/` erreichbar.
 
 ## Wörter ergänzen
-Nach Änderungen an `style.css`, `app.js` oder `words.js` die Versionsnummer (`?v=…`) in `index.html` erhöhen, sonst nutzen Handys noch alte Dateien aus dem Cache.
+In `words.js`:
+1. Neue Wörter nur **am Ende** einer Kategorie anhängen – nichts löschen, umsortieren oder umbenennen.
+2. In `WORD_GENERATIONS` (unten in der Datei) eine neue Zeile mit den neuen Kategorie-Größen anhängen.
 
-In `words.js` – neue Wörter nur **am Ende** einer Kategorie anhängen (neue Kategorien ans Ende der Liste, max. 14), damit bestehende Codes gleich bleiben.
+Jeder Spielcode merkt sich die Generation der Wortliste. Laufende Spiele behalten so exakt ihre
+Wortreihenfolge, neue Spiele bekommen die erweiterte Liste. Tipps dürfen jederzeit verbessert werden.
+
+Nach Änderungen an `style.css`, `app.js` oder `words.js` die Versionsnummer (`?v=…`) in `index.html`
+erhöhen, sonst nutzen Handys noch alte Dateien aus dem Cache.
+
+## Tests
+```
+node tests/logic.test.js   # Wortliste, Spielcodes, Runden, Fairness, Kompatibilität (~3 s)
+node tests/e2e.test.js     # Browser-Durchlauf mit mehreren simulierten Handys (Playwright, ~2 min)
+```
 
 ## Design
 Die Oberfläche orientiert sich am Skill `apple-design` (liegt unter `.claude/skills/apple-design/`,

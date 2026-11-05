@@ -48,9 +48,11 @@ function storageSet(obj) {
 //  - 9 Zeichen:  neues Spiel, Wortstapel beginnt vorne
 //  - 11 Zeichen: nach „Spieler ändern“ – Wortstapel läuft an Position `offset` weiter
 // Der Wortstapel hängt nur von Zufall + Kategorien ab, nicht von der Spielerzahl.
-// Prüfzeichen v2 = (hash + 1) % 32; Codes mit altem Prüfzeichen (hash % 32) laufen weiter wie früher.
+// Prüfzeichen = (hash + Generation + 1) % 32 – so steckt die Wortlisten-Generation im Code,
+// ohne ihn zu verlängern. Prüfzeichen hash % 32 = Code aus der allerersten Version (läuft weiter wie früher).
 const MAX_OFFSET = 32 * 32 - 1;
-function encodeCode(cfg, seed, offset = 0) {
+const CURRENT_GEN = WORD_GENERATIONS.length - 1;
+function encodeCode(cfg, seed, offset = 0, gen = CURRENT_GEN) {
   let s = seed || "";
   while (s.length < 3) s += ALPHABET[Math.floor(Math.random() * 32)];
   s += ALPHABET[cfg.players - MIN_PLAYERS];
@@ -58,7 +60,7 @@ function encodeCode(cfg, seed, offset = 0) {
   const bits = (cfg.mask << 1) | (cfg.hints ? 1 : 0); // bis 14 Kategorien + Tipp = 15 Bit
   s += ALPHABET[(bits >> 10) & 31] + ALPHABET[(bits >> 5) & 31] + ALPHABET[bits & 31];
   if (offset > 0) s += ALPHABET[(offset >> 5) & 31] + ALPHABET[offset & 31];
-  s += ALPHABET[(hashString(s) + 1) % 32];
+  s += ALPHABET[(hashString(s) + gen + 1) % 32];
   return s;
 }
 function cleanCode(input) {
@@ -69,11 +71,11 @@ function decodeCode(raw) {
   if (s.length !== 9 && s.length !== 11) return null;
   for (const ch of s) if (!ALPHABET.includes(ch)) return null;
   const body = s.slice(0, -1), h = hashString(body);
-  let legacy = false;
-  if (ALPHABET[(h + 1) % 32] !== s[s.length - 1]) {
-    if (s.length === 9 && ALPHABET[h % 32] === s[8]) legacy = true; // Code aus älterer Version
-    else return null;
-  }
+  const k = (ALPHABET.indexOf(s[s.length - 1]) - (h % 32) + 32) % 32;
+  const legacy = k === 0;
+  if (legacy && s.length !== 9) return null;
+  const gen = legacy ? 0 : k - 1;
+  if (gen > CURRENT_GEN) return null; // Tippfehler oder Code aus einer neueren Version
   const players = ALPHABET.indexOf(s[3]) + MIN_PLAYERS;
   const imposters = ALPHABET.indexOf(s[4]);
   const bits = (ALPHABET.indexOf(s[5]) << 10) | (ALPHABET.indexOf(s[6]) << 5) | ALPHABET.indexOf(s[7]);
@@ -83,7 +85,7 @@ function decodeCode(raw) {
   if (players > MAX_PLAYERS || imposters < 1 || imposters > maxImposters(players) || mask === 0 || mask >= (1 << CATEGORIES.length)) return null;
   const seed = s.slice(0, 3);
   const wordKey = legacy ? s : seed + ":" + mask;
-  return { code: s, seed, players, imposters, hints, mask, offset, wordKey };
+  return { code: s, seed, players, imposters, hints, mask, offset, wordKey, gen };
 }
 function formatCode(s) {
   return s.match(/.{1,3}/g).join("-");
@@ -93,8 +95,9 @@ function formatCode(s) {
 // Alles deterministisch aus Code + Rundennummer -> alle Handys kommen aufs gleiche Ergebnis.
 function computeRound(game, round) {
   const pool = [];
+  const sizes = WORD_GENERATIONS[game.gen];
   CATEGORIES.forEach((cat, idx) => {
-    if (game.mask & (1 << idx)) cat.words.forEach((w) => pool.push(w));
+    if (game.mask & (1 << idx)) cat.words.slice(0, sizes[idx]).forEach((w) => pool.push(w));
   });
   const order = shuffle(pool.map((_, i) => i), mulberry32(hashString(game.wordKey + ":words")));
   const [word, hint] = pool[order[(game.offset + round - 1) % order.length]];
@@ -256,7 +259,7 @@ function startGame() {
     const g = state.game;
     // bereits gespielte Runden überspringen -> keine Wiederholung
     const offset = Math.min(MAX_OFFSET, g.offset + state.round);
-    code = encodeCode({ ...state.setup, mask: g.mask, hints: g.hints }, g.seed, offset);
+    code = encodeCode({ ...state.setup, mask: g.mask, hints: g.hints }, g.seed, offset, g.gen);
     state.editing = false;
   } else {
     state.setup.hints = $("#hint-toggle").checked;

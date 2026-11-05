@@ -1,8 +1,11 @@
 // Wortliste: [Wort, Tipp für die Imposter]
 // Der Tipp ist bewusst eine LOSE Assoziation, die auf viele Wörter passen könnte –
 // er soll dem Imposter helfen mitzureden, das Wort aber nicht verraten.
-// WICHTIG: Neue Wörter nur am ENDE einer Kategorie anhängen und neue Kategorien nur am ENDE der Liste –
-// sonst bekommen Handys mit alter und neuer Version unterschiedliche Wörter für denselben Code.
+//
+// NEUE WÖRTER HINZUFÜGEN:
+//  1. Nur am ENDE einer Kategorie anhängen (nichts löschen, umsortieren oder umbenennen).
+//  2. Unten in WORD_GENERATIONS eine neue Zeile mit den neuen Kategorie-Größen anhängen.
+// Jeder Spielcode merkt sich seine Generation – laufende Spiele behalten so exakt ihre Wortreihenfolge.
 const CATEGORIES = [
   {
     id: "essen", name: "Essen & Trinken", emoji: "🍕",
@@ -24,7 +27,14 @@ const CATEGORIES = [
       ["Milch", "Weiß"], ["Ei", "Schale"], ["Raclette", "Silvester"], ["Fondue", "Spieß"],
       ["Taco", "Scharf"], ["Pudding", "Vanille"], ["Torte", "Stück"], ["Zuckerwatte", "Rosa"],
       ["Kaugummi", "Pfefferminz"], ["Lakritz", "Geschmackssache"], ["Apfel", "Saft"], ["Kartoffelsalat", "Party"],
-      ["Frikadelle", "Rund"], ["Maultaschen", "Teig"], ["Weißwurst", "Vormittag"], ["Hummus", "Dip"]
+      ["Frikadelle", "Rund"], ["Maultaschen", "Teig"], ["Weißwurst", "Vormittag"], ["Hummus", "Dip"],
+      // --- Generation 2 ---
+      ["Rührei", "Morgens"], ["Bratkartoffeln", "Deftig"], ["Kaiserschmarrn", "Puderzucker"], ["Flammkuchen", "Dünn"],
+      ["Leberkäse", "Semmel"], ["Spätzle", "Beilage"], ["Rotkohl", "Lila"], ["Kartoffelpuffer", "Apfelmus"],
+      ["Milchreis", "Zimt"], ["Joghurt", "Becher"], ["Kiwi", "Haarig"], ["Mango", "Tropen"],
+      ["Paprika", "Bunt"], ["Tomate", "Rot"], ["Brokkoli", "Bäumchen"], ["Spargel", "Frühling"],
+      ["Erdnuss", "Schale"], ["Muffin", "Backform"], ["Lutscher", "Stiel"], ["Energydrink", "Wach"],
+      ["Kakao", "Tasse"], ["Ramen", "Schüssel"], ["Burrito", "Eingewickelt"], ["Pesto", "Grün"]
     ]
   },
   {
@@ -47,7 +57,13 @@ const CATEGORIES = [
       ["Marienkäfer", "Glück"], ["Ameise", "Viele"], ["Mücke", "Summen"], ["Storch", "Nest"],
       ["Flamingo", "Ein Bein"], ["Pfau", "Eitel"], ["Specht", "Holz"], ["Hamster", "Backen"],
       ["Dinosaurier", "Urzeit"], ["Hirsch", "Röhren"], ["Maulwurf", "Garten"], ["Biber", "Zähne"],
-      ["Robbe", "Fisch"], ["Eisbär", "Weiß"], ["Wildschwein", "Borsten"], ["Kolibri", "Nektar"]
+      ["Robbe", "Fisch"], ["Eisbär", "Weiß"], ["Wildschwein", "Borsten"], ["Kolibri", "Nektar"],
+      // --- Generation 2 ---
+      ["Otter", "Verspielt"], ["Luchs", "Pinsel"], ["Dachs", "Bau"], ["Waschbär", "Maske"],
+      ["Erdmännchen", "Wache"], ["Lama", "Spucken"], ["Alpaka", "Flauschig"], ["Strauß", "Laufen"],
+      ["Skorpion", "Wüste"], ["Hering", "Schwarm"], ["Lachs", "Rosa"], ["Möwe", "Kreischen"],
+      ["Hyäne", "Aasfresser"], ["Chamäleon", "Tarnung"], ["Elch", "Skandinavien"], ["Regenwurm", "Erde"],
+      ["Taube", "Stadt"], ["Reh", "Scheu"], ["Seepferdchen", "Klein"]
     ]
   },
   {
@@ -68,7 +84,13 @@ const CATEGORIES = [
       ["Kneipe", "Abend"], ["Waschsalon", "Münzen"], ["Bushaltestelle", "Regen"], ["Kaufhaus", "Etagen"],
       ["Polizeiwache", "Anzeige"], ["Feuerwache", "Alarm"], ["Gewächshaus", "Glas"], ["Kreuzfahrtschiff", "Rentner"],
       ["Eisdiele", "Sommer"], ["Tiefgarage", "Beton"], ["Wartezimmer", "Termin"], ["Dachboden", "Staub"],
-      ["Keller", "Kühl"], ["Solarium", "Braun"], ["Golfplatz", "Rasen"], ["Raumstation", "Umlaufbahn"]
+      ["Keller", "Kühl"], ["Solarium", "Braun"], ["Golfplatz", "Rasen"], ["Raumstation", "Umlaufbahn"],
+      // --- Generation 2 ---
+      ["Kiosk", "Ecke"], ["Wellnesshotel", "Ruhe"], ["Botschaft", "Visum"], ["Fabrik", "Schicht"],
+      ["Büro", "Kollegen"], ["Skihütte", "Après-Ski"], ["Strandbar", "Liegestuhl"], ["Marktplatz", "Brunnen"],
+      ["Parkhaus", "Schranke"], ["Planetarium", "Kuppel"], ["Aquarium", "Glas"], ["Kantine", "Mittag"],
+      ["Tierheim", "Adoption"], ["Notaufnahme", "Wartezeit"], ["Fußgängerzone", "Bummeln"], ["Steinbruch", "Sprengung"],
+      ["Hochhaus", "Aufzug"]
     ]
   },
   {
@@ -89,7 +111,13 @@ const CATEGORIES = [
       ["Architekt", "Gebäude"], ["DJ", "Nacht"], ["Balletttänzer", "Anmut"], ["Schiedsrichter", "Pfiff"],
       ["Flugbegleiter", "Lächeln"], ["Kassierer", "Schlange"], ["Hausmeister", "Reparatur"], ["Müllmann", "Orange"],
       ["Dachdecker", "Höhe"], ["Förster", "Natur"], ["Imker", "Schutzanzug"], ["Winzer", "Herbst"],
-      ["Politiker", "Rede"], ["Butler", "Reich"], ["Psychologe", "Gespräch"], ["Spion", "Geheimnis"]
+      ["Politiker", "Rede"], ["Butler", "Reich"], ["Psychologe", "Gespräch"], ["Spion", "Geheimnis"],
+      // --- Generation 2 ---
+      ["Optiker", "Gestell"], ["Fahrlehrer", "Bremse"], ["Personal Trainer", "Motivation"], ["Florist", "Strauß"],
+      ["Goldschmied", "Ring"], ["Fliesenleger", "Fugen"], ["Notar", "Unterschrift"], ["Steuerberater", "Belege"],
+      ["Erzieher", "Kinder"], ["Barkeeper", "Shaker"], ["Croupier", "Tisch"], ["Jongleur", "Bälle"],
+      ["Stuntman", "Gefahr"], ["Hochzeitsplaner", "Organisation"], ["Bergführer", "Seil"], ["Rettungsschwimmer", "Pfeife"],
+      ["Synchronsprecher", "Film"], ["Uhrmacher", "Präzision"]
     ]
   },
   {
@@ -111,7 +139,13 @@ const CATEGORIES = [
       ["Blumenvase", "Wasser"], ["Bilderrahmen", "Wand"], ["Sanduhr", "Zeit"], ["Kompass", "Wandern"],
       ["Fernglas", "Vögel"], ["Anker", "Hafen"], ["Mülleimer", "Küche"], ["Gießkanne", "Garten"],
       ["Wäscheklammer", "Draußen"], ["Briefmarke", "Hobby"], ["Schaukel", "Garten"], ["Zahnstocher", "Restaurant"],
-      ["Kleiderbügel", "Kleidung"], ["Fußmatte", "Haustür"], ["Schneekugel", "Andenken"], ["Kronleuchter", "Prunk"]
+      ["Kleiderbügel", "Schrank"], ["Fußmatte", "Haustür"], ["Schneekugel", "Andenken"], ["Kronleuchter", "Prunk"],
+      // --- Generation 2 ---
+      ["Regal", "Bücher"], ["Schublade", "Ordnung"], ["Thermoskanne", "Warmhalten"], ["Wärmflasche", "Bauchweh"],
+      ["Föhn", "Badezimmer"], ["Nähmaschine", "Faden"], ["Schraubenzieher", "Drehen"], ["Zange", "Greifen"],
+      ["Lupe", "Klein"], ["Eieruhr", "Küche"], ["Kaffeemaschine", "Morgen"], ["Wasserkocher", "Blubbern"],
+      ["Toaster", "Springen"], ["Korkenzieher", "Flasche"], ["Stempel", "Büro"], ["Globus", "Drehen"],
+      ["Nudelholz", "Teig"], ["Fliegenklatsche", "Sommer"], ["Mausefalle", "Schnappen"], ["Tresor", "Geheim"]
     ]
   },
   {
@@ -132,7 +166,13 @@ const CATEGORIES = [
       ["Segeln", "Boot"], ["Kanu", "Fluss"], ["Judo", "Anzug"], ["Fechten", "Maske"],
       ["Paintball", "Wald"], ["Lasertag", "Dunkel"], ["Escape Room", "Zeitdruck"], ["Schnitzeljagd", "Kinder"],
       ["Verstecken", "Suchen"], ["Schneeballschlacht", "Kalt"], ["Sandburg", "Kinder"], ["Trampolin", "Garten"],
-      ["Bierpong", "Party"], ["Gewichtheben", "Schwer"], ["Wasserski", "See"], ["Kartenhaus", "Einsturz"]
+      ["Bierpong", "Party"], ["Gewichtheben", "Schwer"], ["Wasserski", "See"], ["Kartenhaus", "Einsturz"],
+      // --- Generation 2 ---
+      ["Rugby", "Gedränge"], ["Baseball", "Schläger"], ["American Football", "Super Bowl"], ["Triathlon", "Ausdauer"],
+      ["Kickboxen", "Tritte"], ["Hochsprung", "Latte"], ["Weitsprung", "Sandgrube"], ["Speerwurf", "Weit"],
+      ["Biathlon", "Schießen"], ["Curling", "Wischen"], ["Bogenschießen", "Zielscheibe"], ["Squash", "Wand"],
+      ["Kitesurfen", "Wind"], ["Jenga", "Turm"], ["Uno", "Karten"], ["Activity", "Pantomime"],
+      ["Twister", "Verrenkung"], ["Mensch ärgere dich nicht", "Rauswerfen"], ["Tabu", "Verbotene Wörter"], ["Kniffel", "Glück"]
     ]
   },
   {
@@ -149,7 +189,13 @@ const CATEGORIES = [
       ["Scheidung", "Streit"], ["Ruhestand", "Alter"], ["Wahl", "Sonntag"], ["Flohmarkt", "Feilschen"],
       ["Polterabend", "Scherben"], ["Mondlandung", "1969"], ["Eurovision Song Contest", "Europa"], ["Black Friday", "Shopping"],
       ["Ramadan", "Abends"], ["Adventskalender", "Dezember"], ["Schulabschluss", "Feier"], ["Pyjamaparty", "Kissen"],
-      ["Grillparty", "Garten"], ["Hochzeitstag", "Erinnerung"], ["Kindergeburtstag", "Spiele"], ["Maibaum", "Dorf"]
+      ["Grillparty", "Garten"], ["Hochzeitstag", "Erinnerung"], ["Kindergeburtstag", "Spiele"], ["Maibaum", "Dorf"],
+      // --- Generation 2 ---
+      ["Richtfest", "Dach"], ["Jubiläum", "Rede"], ["Abschlussfahrt", "Klasse"], ["Betriebsfeier", "Kollegen"],
+      ["Sommerfest", "Garten"], ["Schützenfest", "König"], ["Weinfest", "Herbst"], ["Erstkommunion", "Kirche"],
+      ["Konfirmation", "Kirche"], ["Hochzeitsreise", "Urlaub"], ["Silberhochzeit", "Fünfundzwanzig"], ["Thanksgiving", "Truthahn"],
+      ["Chinesisches Neujahr", "Laternen"], ["Holi", "Farbpulver"], ["Diwali", "Lichter"], ["Bundesjugendspiele", "Urkunde"],
+      ["Tag der Deutschen Einheit", "Oktober"]
     ]
   },
   {
@@ -166,7 +212,12 @@ const CATEGORIES = [
       ["Pinocchio", "Holz"], ["Peter Pan", "Fliegen"], ["Sandmann", "Abend"], ["Yeti", "Schnee"],
       ["Sphinx", "Wüste"], ["Phönix", "Feuer"], ["Zentaur", "Pfeil und Bogen"], ["Pegasus", "Fliegen"],
       ["Golem", "Stein"], ["Zauberer Merlin", "Bart"], ["Rapunzel", "Haare"], ["Froschkönig", "Brunnen"],
-      ["Rumpelstilzchen", "Gold"], ["Gestiefelter Kater", "Märchen"], ["Loch Ness", "See"], ["Cyborg", "Zukunft"]
+      ["Rumpelstilzchen", "Gold"], ["Gestiefelter Kater", "Märchen"], ["Loch Ness", "See"], ["Cyborg", "Zukunft"],
+      // --- Generation 2 ---
+      ["Gartenzwerg", "Kitsch"], ["Sirene", "Gesang"], ["Basilisk", "Blick"], ["Zyklop", "Ein Auge"],
+      ["Medusa", "Schlangen"], ["Minotaurus", "Labyrinth"], ["Greif", "Adler"], ["Rübezahl", "Riesengebirge"],
+      ["Struwwelpeter", "Fingernägel"], ["Bremer Stadtmusikanten", "Esel"], ["Frau Holle", "Betten"], ["Christkind", "Geschenke"],
+      ["Krampus", "Ketten"], ["Weihnachtself", "Werkstatt"], ["Dämon", "Böse"], ["Wahrsagerin", "Kristallkugel"]
     ]
   },
   {
@@ -184,7 +235,12 @@ const CATEGORIES = [
       ["Hitzewelle", "Sommer"], ["Frühling", "Vögel"], ["Dschungel", "Feucht"], ["Savanne", "Tiere"],
       ["Sumpf", "Stiefel"], ["Mars", "Weltall"], ["Komet", "Schnell"], ["Sternschnuppe", "Nacht"],
       ["Ebbe", "Meer"], ["Tau", "Gras"], ["Pfütze", "Nass"], ["Muschel", "Strand"],
-      ["Bernstein", "Gelb"], ["Sonnenfinsternis", "Selten"], ["Klimawandel", "Politik"], ["Tsunami", "Welle"]
+      ["Bernstein", "Gelb"], ["Sonnenfinsternis", "Selten"], ["Klimawandel", "Politik"], ["Tsunami", "Welle"],
+      // --- Generation 2 ---
+      ["Dürre", "Trocken"], ["Lawine", "Gefahr"], ["Hochwasser", "Damm"], ["Fels", "Hart"],
+      ["Korallenriff", "Bunt"], ["Regenwald", "Abholzung"], ["Quelle", "Klar"], ["Moor", "Torf"],
+      ["Bach", "Plätschern"], ["Tropfsteinhöhle", "Unterirdisch"], ["Milchstraße", "Unendlich"], ["Sandsturm", "Wüste"],
+      ["Blitzeinschlag", "Donner"], ["Eisberg", "Titanic"], ["Lavendel", "Duft"], ["Tulpe", "Frühling"]
     ]
   },
   {
@@ -201,7 +257,12 @@ const CATEGORIES = [
       ["Fähre", "Insel"], ["Jetski", "Laut"], ["E-Scooter", "Stadt"], ["Tandem", "Fahrrad"],
       ["Traktor", "Langsam"], ["Gondel", "Wasser"], ["Bagger", "Baustelle"], ["Müllauto", "Morgens"],
       ["Panzer", "Militär"], ["Rennwagen", "Schnell"], ["Schlitten", "Schnee"], ["Parkplatz", "Suchen"],
-      ["Tunnel", "Dunkel"], ["Brücke", "Fluss"], ["Tankanzeige", "Auto"], ["Abschleppwagen", "Haken"]
+      ["Tunnel", "Dunkel"], ["Brücke", "Fluss"], ["Tankanzeige", "Auto"], ["Abschleppwagen", "Haken"],
+      // --- Generation 2 ---
+      ["Doppeldeckerbus", "Oben"], ["Wasserflugzeug", "Landen"], ["Lokomotive", "Dampf"], ["Schwebebahn", "Wuppertal"],
+      ["Rikscha", "Asien"], ["Quad", "Gelände"], ["Monstertruck", "Riesig"], ["Segway", "Balance"],
+      ["Fahrstuhl", "Knopf"], ["Rolltreppe", "Stufen"], ["Warndreieck", "Warnung"], ["Leitplanke", "Schutz"],
+      ["Rettungsgasse", "Stau"], ["Nachtzug", "Schlafen"], ["Mähdrescher", "Ernte"], ["Gabelstapler", "Lager"]
     ]
   },
   {
@@ -218,7 +279,13 @@ const CATEGORIES = [
       ["Bademantel", "Hotel"], ["Basecap", "Kopf"], ["Fliege", "Elegant"], ["Weste", "Drüber"],
       ["Overall", "Arbeit"], ["Trikot", "Fan"], ["Stöckelschuhe", "Hoch"], ["Regenmantel", "Gelb"],
       ["Sonnenhut", "Sommer"], ["Rock", "Kurz"], ["Uniform", "Pflicht"], ["Taucheranzug", "Schwarz"],
-      ["Karnevalskostüm", "Lustig"], ["Pantoffeln", "Zuhause"], ["Ohrenschützer", "Winter"], ["Manschettenknöpfe", "Elegant"]
+      ["Karnevalskostüm", "Lustig"], ["Pantoffeln", "Zuhause"], ["Ohrenschützer", "Winter"], ["Manschettenknöpfe", "Elegant"],
+      // --- Generation 2 ---
+      ["Lederjacke", "Rocker"], ["Daunenjacke", "Warm"], ["Kimono", "Seide"], ["Poncho", "Regen"],
+      ["Hosenträger", "Opa"], ["Strohhut", "Sommer"], ["Zylinder", "Feierlich"], ["Kniestrümpfe", "Lang"],
+      ["Stirnband", "Sport"], ["Haarreif", "Kopf"], ["Brosche", "Anstecken"], ["Schweißband", "Handgelenk"],
+      ["Fäustlinge", "Warm"], ["Jogginghose", "Sonntag"], ["Dirndl", "Bayern"], ["Smoking", "Feierlich"],
+      ["Matrosenanzug", "Blau-weiß"], ["Cowboystiefel", "Western"]
     ]
   },
   {
@@ -237,7 +304,13 @@ const CATEGORIES = [
       ["Rügen", "Ostsee"], ["Kuba", "Oldtimer"], ["Thailand", "Strand"], ["Jamaika", "Insel"],
       ["Island", "Kalt"], ["Argentinien", "Fleisch"], ["Grönland", "Eis"], ["Neuseeland", "Schafe"],
       ["Dresden", "Osten"], ["Italien", "Urlaub"], ["Portugal", "Atlantik"], ["Polen", "Nachbar"],
-      ["Kroatien", "Küste"], ["Finnland", "Sauna"], ["Peru", "Berge"], ["Südafrika", "Safari"]
+      ["Kroatien", "Küste"], ["Finnland", "Sauna"], ["Peru", "Berge"], ["Südafrika", "Safari"],
+      // --- Generation 2 ---
+      ["Wien", "Kaffeehaus"], ["Zürich", "Banken"], ["Kopenhagen", "Design"], ["Istanbul", "Basar"],
+      ["Marrakesch", "Gewürze"], ["Tokio", "Menschenmassen"], ["Sydney", "Oper"], ["Rio de Janeiro", "Sonne"],
+      ["Kairo", "Nil"], ["Moskau", "Kälte"], ["Lissabon", "Hügel"], ["Budapest", "Donau"],
+      ["Edinburgh", "Dudelsack"], ["Malediven", "Flitterwochen"], ["Kanaren", "Sonne"], ["Alaska", "Kälte"],
+      ["Texas", "Cowboy"], ["Ostfriesland", "Witze"], ["Ruhrgebiet", "Kohle"], ["Schwarzwald", "Schinken"]
     ]
   },
   {
@@ -254,7 +327,13 @@ const CATEGORIES = [
       ["Hashtag", "Trend"], ["Like", "Gefallen"], ["Spam", "Nervig"], ["Update", "Warten"],
       ["Satellit", "Weltall"], ["Glühbirne", "Idee"], ["Quizshow", "Fernsehen"], ["Zeichentrickfilm", "Kinder"],
       ["Werbung", "Nervig"], ["Sprachnachricht", "Lang"], ["Akkuschrauber", "Werkzeug"], ["Smart Home", "Zukunft"],
-      ["Livestream", "Echtzeit"], ["Online-Shopping", "Paket"], ["USB-Stick", "Klein"], ["Wikipedia", "Wissen"]
+      ["Livestream", "Echtzeit"], ["Online-Shopping", "Paket"], ["USB-Stick", "Klein"], ["Wikipedia", "Wissen"],
+      // --- Generation 2 ---
+      ["Tablet", "Wischen"], ["E-Book-Reader", "Lesen"], ["Fitnessarmband", "Schritte"], ["GPS", "Position"],
+      ["Cloud", "Speicher"], ["Schallplatte", "Retro"], ["Kassette", "Bandsalat"], ["Walkman", "Achtziger"],
+      ["Faxgerät", "Piepsen"], ["Festnetztelefon", "Kabel"], ["Beamer", "Leinwand"], ["Router", "Blinken"],
+      ["Elektroauto", "Laden"], ["Saugroboter", "Selbstständig"], ["QR-Code", "Scannen"], ["Captcha", "Ampeln"],
+      ["Gruppenchat", "Nachrichten"], ["Shitstorm", "Empörung"], ["Meme", "Witzig"]
     ]
   },
   {
@@ -271,7 +350,19 @@ const CATEGORIES = [
       ["Tattoo", "Für immer"], ["Piercing", "Schmerz"], ["Sommersprossen", "Sonne"], ["Gänsehaut", "Kalt"],
       ["Lachen", "Freude"], ["Weinen", "Traurig"], ["Kitzeln", "Lachen"], ["Diät", "Abnehmen"],
       ["Schwitzen", "Hitze"], ["Zunge", "Mund"], ["Fingerabdruck", "Einzigartig"], ["Haarschnitt", "Friseur"],
-      ["Ellenbogen", "Arm"], ["Röntgen", "Krankenhaus"], ["Narkose", "Operation"], ["Kater", "Morgen danach"]
+      ["Ellenbogen", "Arm"], ["Röntgen", "Krankenhaus"], ["Narkose", "Operation"], ["Kater", "Morgen danach"],
+      // --- Generation 2 ---
+      ["Rücken", "Schmerzen"], ["Schulter", "Klopfen"], ["Augenbraue", "Zupfen"], ["Wimpern", "Tusche"],
+      ["Fingernagel", "Lack"], ["Zeh", "Klein"], ["Hüfte", "Schwung"], ["Kinn", "Grübchen"],
+      ["Wange", "Rot"], ["Puls", "Handgelenk"], ["Blinddarm", "Operation"], ["Leber", "Alkohol"],
+      ["Niere", "Paar"], ["Achselhöhle", "Deo"], ["Grippe", "Bett"], ["Migräne", "Dunkelheit"],
+      ["Schlafwandeln", "Nacht"], ["Zähneknirschen", "Stress"]
     ]
   }
+];
+
+// Anzahl Wörter je Kategorie (Reihenfolge wie CATEGORIES) für jede Generation der Liste.
+const WORD_GENERATIONS = [
+  [72,  72,  64,  64,  68,  64,  48,  48,  52,  48,  48,  56,  48,  48], // Generation 1: 800 Wörter
+  [96,  91,  81,  82,  88,  84,  65,  64,  68,  64,  66,  76,  67,  66], // Generation 2: 1058 Wörter
 ];
