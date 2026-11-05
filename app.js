@@ -456,24 +456,39 @@ function renderReady() {
 }
 
 /* ===================== Auflösung ===================== */
-async function reveal() {
+// Auflösen und nächste Runde in einem: Rückfrage -> Auflösung -> „Runde X starten“.
+async function endRound() {
+  const n = state.round;
   const ok = await openSheet({
-    title: "Auflösen?",
-    html: `<p class="muted">Alle sehen dann das Wort und wer Imposter war.</p>`,
+    title: `Runde ${n} beenden?`,
+    html: `<p class="muted">Danach seht ihr das Wort und wer Imposter war.</p>`,
     ok: "Auflösen",
   });
   if (!ok) return;
-  const r = computeRound(state.game, state.round);
+  const r = computeRound(state.game, n);
   await wait(320); // erst runter, dann mit dem Ergebnis wieder hoch
-  openSheet({
+  const next = await openSheet({
     title: "Auflösung",
     html: `<p class="muted">Das Wort war</p>
       <div class="reveal-word">${esc(r.word)}</div>
       ${state.game.hints ? `<p class="muted">Tipp für die Imposter: „${esc(r.hint)}“</p>` : ""}
       <p class="muted">${r.imposters.length > 1 ? "Imposter waren" : "Imposter war"}</p>
-      <div class="reveal-imps">${r.imposters.map((n) => `<span>${esc(playerName(n))}</span>`).join("")}</div>`,
-    ok: "Schließen", cancel: null,
+      <div class="reveal-imps">${r.imposters.map((x) => `<span>${esc(playerName(x))}</span>`).join("")}</div>
+      ${state.mode === "multi" ? `<p class="muted small">Alle anderen tippen auch auf „Auflösen &amp; nächste Runde“.</p>` : ""}`,
+    ok: `Runde ${n + 1} starten`,
+    cancel: "Noch nicht",
   });
+  if (!next || state.round !== n) return;
+  state.round++;
+  if (state.mode === "multi") {
+    persist();
+    renderCard();
+    toast(`✓ Runde ${state.round} gestartet`);
+  } else {
+    state.passIndex = 1;
+    renderPass();
+    show("pass");
+  }
 }
 const wait = (ms) => new Promise((res) => setTimeout(res, ms));
 
@@ -563,26 +578,8 @@ const actions = {
   },
   "join-submit": () => joinWithCode($("#code-input").value),
   board: () => { renderBoard(); show("board"); },
-  reveal,
-  "next-round": async () => {
-    const ok = await openSheet({
-      title: `Runde ${state.round + 1} starten?`,
-      html: `<p class="muted">Alle anderen müssen danach auch „Nächste Runde“ drücken, damit ihr wieder in derselben Runde seid.</p>`,
-      ok: "Neue Runde starten",
-    });
-    if (!ok) return;
-    state.round++;
-    persist();
-    renderCard();
-    toast(`✓ Runde ${state.round} gestartet`);
-  },
+  "end-round": endRound,
   "pass-next": passNext,
-  "pass-new-round": () => {
-    state.round++;
-    state.passIndex = 1;
-    renderPass();
-    show("pass");
-  },
 };
 
 document.addEventListener("click", (e) => {

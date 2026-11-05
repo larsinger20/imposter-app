@@ -197,30 +197,34 @@ const cardInfo = (h) => ({ imp: h.text.includes("Du bist Imposter"), word: h.wor
   const playedWords = [];
   for (let round = 1; round <= 4; round++) {
     playedWords.push(await verifyRound(round));
+    const expR = L.computeRound(game, round);
     for (const p of phones) {
-      await p.tap("[data-action=next-round]"); await wait(p);
-      if (p === host) check(`Rückfrage „Nächste Runde“ (Runde ${round + 1})`, (await p.textContent("#sheet-title")) === `Runde ${round + 1} starten?`);
+      await p.tap("#screen-card [data-action=end-round]"); await wait(p);
+      if (p === host) check(`Rückfrage „Runde ${round} beenden?“`, (await p.textContent("#sheet-title")) === `Runde ${round} beenden?`);
+      await p.tap("#sheet-ok"); await wait(p, 800);
+      if (p === host) {
+        const body = await p.textContent("#sheet-body");
+        check(`R${round}: Auflösung zeigt Wort & Tipp`, body.includes(expR.word) && body.includes(expR.hint));
+        check(`R${round}: Auflösung zeigt alle Imposter`, expR.imposters.every((n) => body.includes(game.names[n - 1] || `Spieler ${n}`)));
+        check(`R${round}: Knopf „Runde ${round + 1} starten“`, (await p.textContent("#sheet-ok")) === `Runde ${round + 1} starten`);
+      }
       await p.tap("#sheet-ok"); await wait(p, 300);
     }
   }
   playedWords.push(await verifyRound(5));
   check("5 Runden, 5 verschiedene Wörter", new Set(playedWords).size === 5);
 
-  // Abbrechen bei nächster Runde
-  await host.tap("[data-action=next-round]"); await wait(host); await host.tap("#sheet-cancel"); await wait(host);
-  check("Abbrechen bei „Nächste Runde“ bleibt in Runde 5", (await host.textContent("#card-round")) === "Runde 5");
-
-  // Auflösen
-  await host.tap("#screen-card [data-action=reveal]"); await wait(host);
-  check("Auflösen fragt nach", (await host.textContent("#sheet-title")) === "Auflösen?");
+  // Abbrechen bei der Rückfrage
+  await host.tap("#screen-card [data-action=end-round]"); await wait(host); await host.tap("#sheet-cancel"); await wait(host);
+  check("Abbrechen bei Rückfrage bleibt in Runde 5", (await host.textContent("#card-round")) === "Runde 5" && !(await sheetOpen(host)));
+  // Auflösen, aber „Noch nicht“
+  await host.tap("#screen-card [data-action=end-round]"); await wait(host);
   await host.tap("#sheet-ok"); await wait(host, 900);
   const exp5 = L.computeRound(game, 5);
-  const revealText = await host.textContent("#sheet-body");
-  check("Auflösung zeigt Wort", revealText.includes(exp5.word));
-  check("Auflösung zeigt Tipp", revealText.includes(exp5.hint));
-  check("Auflösung zeigt beide Imposter", exp5.imposters.every((n) => revealText.includes(game.names[n - 1] || `Spieler ${n}`)));
-  check("Auflösung hat nur „Schließen“", await host.isHidden("#sheet-cancel"));
-  await host.tap("#sheet-ok"); await wait(host);
+  check("Auflösung Runde 5 korrekt", (await host.textContent("#sheet-body")).includes(exp5.word));
+  check("Auflösung bietet „Noch nicht“", (await host.textContent("#sheet-cancel")) === "Noch nicht");
+  await host.tap("#sheet-cancel"); await wait(host);
+  check("„Noch nicht“ bleibt in Runde 5", (await host.textContent("#card-round")) === "Runde 5");
   await noHorizontalScroll(host, "Karte");
 
   // Neuladen (Handy gesperrt) -> gleiche Karte, verdeckt
@@ -326,10 +330,11 @@ const cardInfo = (h) => ({ imp: h.text.includes("Du bist Imposter"), word: h.wor
       if (round === 1) {
         await p.reload();
         check("Neuladen auf „Alle bereit“ bleibt dort", (await screen(p)) === "ready");
-        await p.tap("#screen-ready [data-action=reveal]"); await sheetOk(p); await wait(p, 500);
+        await p.tap("#screen-ready [data-action=end-round]"); await sheetOk(p); await wait(p, 500);
         check("Auflösung ohne Tipp-Zeile", !(await p.textContent("#sheet-body")).includes("Tipp für"));
+        check("Herumreichen: Auflösung zeigt Wort", (await p.textContent("#sheet-body")).includes(exp.word));
         await p.tap("#sheet-ok"); await wait(p);
-        await p.tap("[data-action=pass-new-round]");
+        check("Herumreichen: „Runde 2 starten“ → wieder bei Spieler 1", (await screen(p)) === "pass" && (await p.textContent("#pass-progress")) === "1/5");
       }
     }
     await p.tap("#screen-ready [data-action=edit-players]");

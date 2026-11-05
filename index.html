@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#14111f">
   <title>Imposter – Partyspiel</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕵️</text></svg>">
-  <link rel="stylesheet" href="style.css?v=8">
+  <link rel="stylesheet" href="style.css?v=9">
   <!-- Versionsnummer bei jeder Änderung an CSS/JS erhöhen, sonst nutzen Handys alte Dateien aus dem Cache -->
   <style>.sheet-layer { visibility: hidden; position: fixed; }</style>
 </head>
@@ -122,11 +122,8 @@
         </div>
       </div>
       <p class="muted center small" id="card-meta"></p>
-      <div class="row">
-        <button class="btn secondary" data-action="reveal">🔍 Auflösen</button>
-        <button class="btn primary" data-action="next-round">Nächste Runde</button>
-      </div>
-      <p class="muted center small">„Nächste Runde“ muss auf allen Handys gedrückt werden.</p>
+      <button class="btn primary big" data-action="end-round">Auflösen &amp; nächste Runde</button>
+      <p class="muted center small">Muss auf allen Handys gedrückt werden, damit alle in derselben Runde sind.</p>
     </section>
 
     <!-- HERUMREICHEN -->
@@ -150,8 +147,7 @@
         <p class="muted">Reihum sagt jeder ein Wort, das zu seinem Begriff passt. Danach wird diskutiert und abgestimmt, wer der Imposter ist.</p>
       </div>
       <div class="stack">
-        <button class="btn secondary big" data-action="reveal">🔍 Auflösen</button>
-        <button class="btn primary big" data-action="pass-new-round">🔄 Neue Runde</button>
+        <button class="btn primary big" data-action="end-round">Auflösen &amp; nächste Runde</button>
         <button class="btn ghost" data-action="edit-players">👥 Spieler ändern</button>
         <button class="btn ghost" data-action="setup-pass">⚙️ Neues Spiel</button>
       </div>
@@ -191,7 +187,7 @@
     <div class="toast hidden" id="toast"></div>
   </main>
 
-  <script src="words.js?v=8"></script>
-  <script src="app.js?v=8"></script>
+  <script src="words.js?v=9"></script>
+  <script src="app.js?v=9"></script>
 </body>
 </html>
