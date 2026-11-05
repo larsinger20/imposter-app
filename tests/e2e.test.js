@@ -37,6 +37,10 @@ async function hold(p, sel, ms = 350) {
 async function tapWhileEnabled(p, sel, n) {
   for (let i = 0; i < n; i++) { if (await p.isDisabled(sel)) return; await p.tap(sel); }
 }
+async function setPlayers(p, n) {
+  while (Number(await p.textContent("#players-out")) < n) await p.tap("#add-player");
+  while (Number(await p.textContent("#players-out")) > n) await p.tap(".name-row:last-child .remove-player");
+}
 async function noHorizontalScroll(p, label) {
   const ok = await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
   check(`kein seitliches Scrollen: ${label}`, ok);
@@ -82,19 +86,33 @@ const cardInfo = (h) => ({ imp: h.text.includes("Du bist Imposter"), word: h.wor
     const p = await phone();
     await p.goto(URL);
     await p.tap("[data-action=setup-multi]");
-    await tapWhileEnabled(p, '[data-step=players][data-delta="-1"]', 25);
+    await tapWhileEnabled(p, ".name-row:last-child .remove-player", 25);
     check("Spieler minimal 3", (await p.textContent("#players-out")) === "3");
-    check("Minus-Knopf bei 3 deaktiviert", await p.isDisabled('[data-step=players][data-delta="-1"]'));
+    check("✕ bei 3 Spielern deaktiviert", (await p.$$eval(".remove-player", (b) => b.every((x) => x.disabled))));
     check("bei 3 Spielern genau 1 Imposter erlaubt", (await p.textContent("#imposters-out")) === "1" && await p.isDisabled('[data-step=imposters][data-delta="1"]'));
     check("Namensfelder folgen der Spielerzahl (3)", (await p.$$(".name-input")).length === 3);
-    await tapWhileEnabled(p, '[data-step=players][data-delta="1"]', 25);
+    await tapWhileEnabled(p, "#add-player", 25);
     check("Spieler maximal 20", (await p.textContent("#players-out")) === "20");
+    check("„Spieler hinzufügen“ bei 20 deaktiviert", await p.isDisabled("#add-player"));
     check("Namensfelder folgen der Spielerzahl (20)", (await p.$$(".name-input")).length === 20);
     check("Empfehlung folgt der Spielerzahl (20 → 5)", (await p.textContent("#imposters-out")) === "5");
     await tapWhileEnabled(p, '[data-step=imposters][data-delta="1"]', 10);
     check("Imposter maximal 5", (await p.textContent("#imposters-out")) === "5");
-    for (let p2 = 20; p2 > 6; p2--) await p.tap('[data-step=players][data-delta="-1"]');
+    await setPlayers(p, 6);
     check("Imposter werden bei weniger Spielern begrenzt (6 → ≤2)", Number(await p.textContent("#imposters-out")) <= 2);
+    // gezielt eine Person in der Mitte entfernen
+    const nm = ["Lars", "Tim", "Anna", "Max", "Lea", "Ben"];
+    const fields = await p.$$(".name-input");
+    for (let i = 0; i < 6; i++) await fields[i].fill(nm[i]);
+    await p.tap(".name-row:nth-child(3) .remove-player");
+    const left = await p.$$eval(".name-input", (e) => e.map((x) => x.value));
+    check("✕ entfernt genau diese Person (Anna)", JSON.stringify(left) === JSON.stringify(["Lars", "Tim", "Max", "Lea", "Ben"]), left.join(","));
+    check("Spielerzahl folgt (5)", (await p.textContent("#players-out")) === "5");
+    await p.tap("#add-player");
+    check("neuer Spieler: leeres Feld am Ende, mit Cursor", (await p.$$eval(".name-input", (e) => e.length)) === 6 && (await p.evaluate(() => document.activeElement === [...document.querySelectorAll(".name-input")].pop())));
+    await p.focus(".name-row:nth-child(1) .name-input"); await p.keyboard.press("Enter");
+    check("Enter springt ins nächste Namensfeld", await p.evaluate(() => document.activeElement === document.querySelectorAll(".name-input")[1]));
+    for (const f of await p.$$(".name-input")) await f.fill("");
     const total = L.CATEGORIES.reduce((n, c) => n + c.words.length, 0);
     check(`Wortzahl angezeigt (${total})`, (await p.textContent("#word-count")).includes(String(total)));
     const chips = await p.$$(".chip");
@@ -113,8 +131,7 @@ const cardInfo = (h) => ({ imp: h.text.includes("Du bist Imposter"), word: h.wor
   const host = await phone();
   await host.goto(URL);
   await host.tap("[data-action=setup-multi]");
-  while (Number(await host.textContent("#players-out")) < 7) await host.tap('[data-step=players][data-delta="1"]');
-  while (Number(await host.textContent("#players-out")) > 7) await host.tap('[data-step=players][data-delta="-1"]');
+  await setPlayers(host, 7);
   while (Number(await host.textContent("#imposters-out")) < 2) await host.tap('[data-step=imposters][data-delta="1"]');
   while (Number(await host.textContent("#imposters-out")) > 2) await host.tap('[data-step=imposters][data-delta="-1"]');
   const inputs = await host.$$(".name-input");
@@ -274,7 +291,7 @@ const cardInfo = (h) => ({ imp: h.text.includes("Du bist Imposter"), word: h.wor
   check("Kategorien ausgeblendet", !(await host.isVisible("#category-chips")));
   check("Namen vorausgefüllt", (await host.$eval(".name-input", (e) => e.value)) === "Lars");
   check("Spielerzahl übernommen", (await host.textContent("#players-out")) === "7");
-  await host.tap('[data-step=players][data-delta="1"]');
+  await host.tap("#add-player");
   await (await host.$$(".name-input"))[7].fill("Neu");
   await host.tap("#start-btn");
   const code2 = (await host.textContent("#host-code")).replace(/-/g, "");
@@ -300,8 +317,7 @@ const cardInfo = (h) => ({ imp: h.text.includes("Du bist Imposter"), word: h.wor
     const p = await phone();
     await p.goto(URL);
     await p.tap("[data-action=setup-pass]");
-    while (Number(await p.textContent("#players-out")) > 5) await p.tap('[data-step=players][data-delta="-1"]');
-    while (Number(await p.textContent("#players-out")) < 5) await p.tap('[data-step=players][data-delta="1"]');
+    await setPlayers(p, 5);
     while (Number(await p.textContent("#imposters-out")) > 1) await p.tap('[data-step=imposters][data-delta="-1"]');
     const ins = await p.$$(".name-input");
     for (let i = 0; i < 5; i++) await ins[i].fill(["A", "B", "C", "D", ""][i]);
@@ -338,7 +354,8 @@ const cardInfo = (h) => ({ imp: h.text.includes("Du bist Imposter"), word: h.wor
       }
     }
     await p.tap("#screen-ready [data-action=edit-players]");
-    await p.tap('[data-step=players][data-delta="-1"]');
+    await p.tap(".name-row:nth-child(2) .remove-player"); // B geht
+    check("Spieler ändern: B entfernt, Rest bleibt", JSON.stringify(await p.$$eval(".name-input", (e) => e.map((x) => x.value))) === JSON.stringify(["A", "C", "D", ""]));
     await p.tap("#start-btn");
     const g2 = L.decodeCode(await p.evaluate(() => JSON.parse(localStorage.getItem("imposter-state-v2")).pass.code));
     check("Herumreichen: Spieler ändern → 4 Spieler, Stapel bei 2", g2.players === 4 && g2.offset === 2 && (await p.textContent("#pass-progress")) === "1/4");

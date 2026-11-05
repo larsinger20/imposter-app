@@ -173,8 +173,6 @@ function renderSetup() {
   $("#players-out").textContent = s.players;
   $("#imposters-out").textContent = s.imposters;
   $("#imp-hint").textContent = `(empfohlen: ${recommendedImposters(s.players)})`;
-  document.querySelector('[data-step="players"][data-delta="-1"]').disabled = s.players <= MIN_PLAYERS;
-  document.querySelector('[data-step="players"][data-delta="1"]').disabled = s.players >= MAX_PLAYERS;
   document.querySelector('[data-step="imposters"][data-delta="-1"]').disabled = s.imposters <= 1;
   document.querySelector('[data-step="imposters"][data-delta="1"]').disabled = s.imposters >= maxImposters(s.players);
   $("#hint-toggle").checked = s.hints;
@@ -198,22 +196,59 @@ function renderSetup() {
     chips.appendChild(b);
   });
 }
+// Jede Zeile ist ein Spieler: ✕ entfernt genau diese Person, „+“ hängt einen an.
 function renderNameInputs() {
   const s = state.setup;
+  s.names = Array.from({ length: s.players }, (_, i) => (s.names && s.names[i]) || "");
   const box = $("#name-inputs");
-  // vorhandene Eingaben übernehmen, bevor neu gezeichnet wird
-  box.querySelectorAll("input").forEach((inp, i) => { s.names[i] = inp.value; });
   box.innerHTML = "";
-  for (let i = 0; i < s.players; i++) {
+  s.names.forEach((name, i) => {
+    const row = document.createElement("div");
+    row.className = "name-row";
     const inp = document.createElement("input");
     inp.className = "name-input";
     inp.maxLength = MAX_NAME_LEN;
     inp.placeholder = `Spieler ${i + 1}`;
-    inp.value = s.names[i] || "";
+    inp.value = name;
     inp.autocomplete = "off";
+    inp.setAttribute("autocapitalize", "words");
+    inp.enterKeyHint = i < s.players - 1 ? "next" : "done";
     inp.oninput = () => { s.names[i] = inp.value; };
-    box.appendChild(inp);
-  }
+    inp.onkeydown = (e) => {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      const next = box.querySelectorAll(".name-input")[i + 1];
+      if (next) next.focus(); else inp.blur();
+    };
+    const del = document.createElement("button");
+    del.className = "remove-player";
+    del.type = "button";
+    del.textContent = "✕";
+    del.disabled = s.players <= MIN_PLAYERS;
+    del.setAttribute("aria-label", `${name || `Spieler ${i + 1}`} entfernen`);
+    del.onclick = () => removePlayer(i);
+    row.append(inp, del);
+    box.appendChild(row);
+  });
+  $("#add-player").disabled = s.players >= MAX_PLAYERS;
+}
+function changePlayerCount(apply) {
+  const s = state.setup;
+  const wasRecommended = s.imposters === recommendedImposters(s.players);
+  apply(s);
+  s.players = s.names.length;
+  if (wasRecommended) s.imposters = recommendedImposters(s.players);
+  renderSetup();
+}
+function removePlayer(i) {
+  if (state.setup.players <= MIN_PLAYERS) return;
+  changePlayerCount((s) => s.names.splice(i, 1));
+}
+function addPlayer() {
+  if (state.setup.players >= MAX_PLAYERS) return;
+  changePlayerCount((s) => s.names.push(""));
+  const inputs = document.querySelectorAll("#name-inputs .name-input");
+  inputs[inputs.length - 1].focus();
 }
 function openSetup(mode) {
   state.mode = mode;
@@ -230,7 +265,6 @@ function openEditPlayers() {
   state.setup.players = state.game.players;
   state.setup.imposters = state.game.imposters;
   state.setup.names = state.game.names ? state.game.names.slice() : [];
-  $("#name-inputs").innerHTML = ""; // Eingaben neu aus state.setup.names aufbauen
   $("#setup-title").textContent = "Spieler ändern";
   setSetupEditMode(true);
   renderSetup();
@@ -244,13 +278,7 @@ function setSetupEditMode(on) {
 }
 function stepSetup(key, delta) {
   const s = state.setup;
-  if (key === "players") {
-    const wasRecommended = s.imposters === recommendedImposters(s.players);
-    s.players = Math.min(MAX_PLAYERS, Math.max(MIN_PLAYERS, s.players + delta));
-    if (wasRecommended) s.imposters = recommendedImposters(s.players);
-  } else {
-    s.imposters = Math.min(maxImposters(s.players), Math.max(1, s.imposters + delta));
-  }
+  if (key === "imposters") s.imposters = Math.min(maxImposters(s.players), Math.max(1, s.imposters + delta));
   renderSetup();
 }
 function startGame() {
@@ -573,6 +601,7 @@ const actions = {
   "setup-multi": () => openSetup("multi"),
   "setup-pass": () => openSetup("pass"),
   "edit-players": openEditPlayers,
+  "add-player": addPlayer,
   start: startGame,
   share: shareLink,
   "host-join": () => { renderBoard(); show("board"); },
@@ -613,6 +642,8 @@ document.addEventListener("visibilitychange", () => {
 (function init() {
   const saved = storageGet();
   if (saved.setup) Object.assign(state.setup, saved.setup);
+  state.setup.players = Math.min(MAX_PLAYERS, Math.max(MIN_PLAYERS, state.setup.players || 6));
+  if (!Array.isArray(state.setup.names)) state.setup.names = [];
   const params = new URLSearchParams(location.search);
   const g = params.get("g");
   if (g) {

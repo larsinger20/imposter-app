@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#14111f">
   <title>Imposter – Partyspiel</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕵️</text></svg>">
-  <link rel="stylesheet" href="style.css?v=10">
+  <link rel="stylesheet" href="style.css?v=11">
   <!-- Versionsnummer bei jeder Änderung an CSS/JS erhöhen, sonst nutzen Handys alte Dateien aus dem Cache -->
   <style>.sheet-layer { visibility: hidden; position: fixed; }</style>
 </head>
@@ -33,12 +33,9 @@
       <header class="bar"><button class="back" data-action="home">‹</button><h2 id="setup-title">Neues Spiel</h2></header>
 
       <div class="card">
-        <label class="label">Spieler insgesamt</label>
-        <div class="stepper">
-          <button data-step="players" data-delta="-1">−</button>
-          <output id="players-out">6</output>
-          <button data-step="players" data-delta="1">+</button>
-        </div>
+        <label class="label">Spieler <span class="count-pill" id="players-out">6</span> <span class="hint">Namen sind optional</span></label>
+        <div class="player-list" id="name-inputs"></div>
+        <button class="btn secondary add-player" id="add-player" data-action="add-player">＋ Spieler hinzufügen</button>
       </div>
 
       <div class="card">
@@ -48,11 +45,6 @@
           <output id="imposters-out">1</output>
           <button data-step="imposters" data-delta="1">+</button>
         </div>
-      </div>
-
-      <div class="card">
-        <label class="label">Namen <span class="hint">(optional)</span></label>
-        <div class="names" id="name-inputs"></div>
       </div>
 
       <div class="card">
@@ -187,7 +179,7 @@
     <div class="toast hidden" id="toast"></div>
   </main>
 
-  <script src="words.js?v=10"></script>
-  <script src="app.js?v=10"></script>
+  <script src="words.js?v=11"></script>
+  <script src="app.js?v=11"></script>
 </body>
 </html>

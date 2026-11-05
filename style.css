@@ -130,7 +130,18 @@ h3 { margin: 18px 0 6px; }
 }
 @keyframes toast-in { from { opacity: 0; transform: translate(-50%, -8px); } to { opacity: 1; transform: translate(-50%, 0); } }
 
-.names { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.player-list { display: flex; flex-direction: column; gap: 8px; }
+.name-row { display: flex; gap: 8px; align-items: center; }
+.name-row .name-input { flex: 1; }
+.remove-player {
+  flex-shrink: 0; width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--line);
+  background: var(--bg2); color: var(--muted); font-size: 16px; cursor: pointer; transition: transform .12s ease-out, color .12s;
+}
+.remove-player:active { transform: scale(.92); color: var(--accent); }
+.remove-player:disabled { opacity: .25; }
+.add-player { width: 100%; margin-top: 10px; padding: 12px; }
+.add-player:disabled { opacity: .35; }
+.count-pill { display: inline-block; min-width: 28px; padding: 1px 8px; margin: 0 4px; border-radius: 999px; background: var(--bg2); border: 1px solid var(--line); text-align: center; font-size: 15px; }
 .name-input { width: 100%; min-width: 0; background: var(--bg2); border: 1px solid var(--line); border-radius: 12px; color: var(--text); font: inherit; font-size: 16px; padding: 10px 12px; }
 .name-input:focus { outline: 2px solid var(--accent2); }
 .name-input::placeholder { color: var(--muted); opacity: .7; }
