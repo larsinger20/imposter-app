@@ -483,11 +483,18 @@ async function endRound() {
   if (state.mode === "multi") {
     persist();
     renderCard();
-    toast(`✓ Runde ${state.round} gestartet`);
+    pulse($("#card-round"), $("#card-starter")); // Rückmeldung direkt an Ort und Stelle statt Meldung
   } else {
     state.passIndex = 1;
     renderPass();
     show("pass");
+  }
+}
+function pulse(...els) {
+  for (const el of els) {
+    el.classList.remove("pulse");
+    void el.offsetWidth; // Animation neu starten
+    el.classList.add("pulse");
   }
 }
 const wait = (ms) => new Promise((res) => setTimeout(res, ms));
