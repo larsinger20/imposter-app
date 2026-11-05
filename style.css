@@ -210,3 +210,18 @@ h3 { margin: 18px 0 6px; }
 .starter.me { background: linear-gradient(135deg, rgba(255, 77, 109, .28), rgba(255, 122, 69, .28)); border-color: var(--accent); }
 .starter.big { font-size: 22px; padding: 16px 20px; margin: 14px auto 12px; max-width: 360px; }
 .starter.big .starter-icon { font-size: 28px; }
+
+/* ===== Kategorien zusammengeklappt ===== */
+.cat-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.cat-label { margin-bottom: 2px; }
+.cat-toggle { padding: 9px 16px; font-size: 15px; flex-shrink: 0; }
+#category-chips { margin-top: 14px; }
+
+/* ===== „Los geht's“ bleibt unten sichtbar ===== */
+.sticky-actions {
+  position: sticky; bottom: 0; z-index: 4;
+  margin: 0 -16px calc(-24px - env(safe-area-inset-bottom));
+  padding: 14px 16px calc(16px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 62%, rgba(20, 17, 31, 0));
+}
+.sticky-actions .btn { width: 100%; }

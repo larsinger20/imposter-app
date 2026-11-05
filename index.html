@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#14111f">
   <title>Imposter – Partyspiel</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕵️</text></svg>">
-  <link rel="stylesheet" href="style.css?v=11">
+  <link rel="stylesheet" href="style.css?v=12">
   <!-- Versionsnummer bei jeder Änderung an CSS/JS erhöhen, sonst nutzen Handys alte Dateien aus dem Cache -->
   <style>.sheet-layer { visibility: hidden; position: fixed; }</style>
 </head>
@@ -48,8 +48,14 @@
       </div>
 
       <div class="card">
-        <label class="label">Kategorien <span class="hint" id="word-count"></span></label>
-        <div class="chips" id="category-chips"></div>
+        <div class="cat-head">
+          <div>
+            <div class="label cat-label">Kategorien</div>
+            <div class="hint" id="word-count"></div>
+          </div>
+          <button class="btn secondary cat-toggle" id="toggle-cats" data-action="toggle-cats" aria-expanded="false">Ändern</button>
+        </div>
+        <div class="chips hidden" id="category-chips"></div>
       </div>
 
       <div class="card">
@@ -61,7 +67,9 @@
       </div>
 
       <p class="muted center small hidden" id="edit-note">Kategorien bleiben gleich – die Wörter gehen einfach weiter, ohne Wiederholung.</p>
-      <button class="btn primary big" data-action="start" id="start-btn">Los geht's ▶</button>
+      <div class="sticky-actions">
+        <button class="btn primary big" data-action="start" id="start-btn">Los geht's ▶</button>
+      </div>
     </section>
 
     <!-- HOST: CODE TEILEN -->
@@ -179,7 +187,7 @@
     <div class="toast hidden" id="toast"></div>
   </main>
 
-  <script src="words.js?v=11"></script>
-  <script src="app.js?v=11"></script>
+  <script src="words.js?v=12"></script>
+  <script src="app.js?v=12"></script>
 </body>
 </html>

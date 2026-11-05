@@ -115,6 +115,11 @@ const cardInfo = (h) => ({ imp: h.text.includes("Du bist Imposter"), word: h.wor
     for (const f of await p.$$(".name-input")) await f.fill("");
     const total = L.CATEGORIES.reduce((n, c) => n + c.words.length, 0);
     check(`Wortzahl angezeigt (${total})`, (await p.textContent("#word-count")).includes(String(total)));
+    check("Kategorien zusammengeklappt", !(await p.isVisible("#category-chips")) && (await p.textContent("#word-count")).startsWith("Alle 14 Kategorien"));
+    const sb = await p.locator("#start-btn").boundingBox();
+    check("„Los geht's“ ohne Scrollen sichtbar", sb.y + sb.height <= (await p.evaluate(() => innerHeight)) + 1);
+    await p.tap("#toggle-cats");
+    check("„Ändern“ klappt Kategorien auf", await p.isVisible("#category-chips") && (await p.textContent("#toggle-cats")) === "Fertig");
     const chips = await p.$$(".chip");
     check("14 Kategorie-Chips", chips.length === 14);
     for (let i = 1; i < 14; i++) await (await p.$$(".chip"))[i].tap();
@@ -151,6 +156,7 @@ const cardInfo = (h) => ({ imp: h.text.includes("Du bist Imposter"), word: h.wor
   check("Board zeigt Namen", boardTexts[0].startsWith("Lars") && boardTexts[1].startsWith("Tim"));
   check("Board escaped HTML im Namen", boardTexts[3].startsWith("<b>Max</b>") && !(await host.$(".seat b")));
   check("Komma im Namen entfernt", boardTexts[4].startsWith("Jonas der Große"));
+  check("keine „Nr. x“ bei Namen", !boardTexts.some((x) => x.includes("Nr.")));
   check("leerer Name → Nummer", boardTexts[5].startsWith("6"));
 
   // Sheet-Verhalten an der Platzwahl testen

@@ -177,7 +177,13 @@ function renderSetup() {
   document.querySelector('[data-step="imposters"][data-delta="1"]').disabled = s.imposters >= maxImposters(s.players);
   $("#hint-toggle").checked = s.hints;
   const count = CATEGORIES.reduce((n, c, i) => n + (s.mask & (1 << i) ? c.words.length : 0), 0);
-  $("#word-count").textContent = `(${count} Wörter – keine Wiederholung innerhalb eines Spiels)`;
+  const chosen = CATEGORIES.filter((_, i) => s.mask & (1 << i)).length;
+  $("#word-count").textContent = chosen === CATEGORIES.length
+    ? `Alle ${chosen} Kategorien · ${count} Wörter`
+    : `${chosen} von ${CATEGORIES.length} Kategorien · ${count} Wörter`;
+  $("#category-chips").classList.toggle("hidden", !state.catsOpen);
+  $("#toggle-cats").textContent = state.catsOpen ? "Fertig" : "Ändern";
+  $("#toggle-cats").setAttribute("aria-expanded", String(!!state.catsOpen));
 
   renderNameInputs();
 
@@ -253,6 +259,7 @@ function addPlayer() {
 function openSetup(mode) {
   state.mode = mode;
   state.editing = false;
+  state.catsOpen = false;
   $("#setup-title").textContent = mode === "multi" ? "Spiel erstellen" : "Handy herumreichen";
   setSetupEditMode(false);
   renderSetup();
@@ -369,7 +376,7 @@ function renderBoard() {
     const name = state.game.names && state.game.names[i - 1];
     b.className = "seat" + (state.seat === i ? " mine" : "") + (name ? " named" : "");
     b.innerHTML = name
-      ? `<span class="seat-name">${esc(name)}</span><small>${state.seat === i ? "du" : "Nr. " + i}</small>`
+      ? `<span class="seat-name">${esc(name)}</span>${state.seat === i ? "<small>du</small>" : ""}`
       : `${i}<small>${state.seat === i ? "du" : "Spieler"}</small>`;
     b.onclick = async () => {
       if (state.seat !== i && !(await openSheet({
@@ -602,6 +609,7 @@ const actions = {
   "setup-pass": () => openSetup("pass"),
   "edit-players": openEditPlayers,
   "add-player": addPlayer,
+  "toggle-cats": () => { state.catsOpen = !state.catsOpen; renderSetup(); },
   start: startGame,
   share: shareLink,
   "host-join": () => { renderBoard(); show("board"); },
